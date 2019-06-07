@@ -14,4 +14,9 @@ export default {
 </script>
 
 <style scoped>
+.item {
+  margin: 5px 0px;
+  width: 200px;
+  padding: 5px;
+}
 </style>
