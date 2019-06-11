@@ -1,40 +1,80 @@
 <template>
 <div id="app">
-  <Dash v-bind:store="store" />
+  <Dash />
 </div>
 </template>
 
 <script>
-import Vue from 'vue'
 import Dash from './components/Dash.vue'
+import { mapActions } from 'vuex';
 
-const store = {
-  state: {
-    selected: -1,
-    mode: 'move', // 'move', 'selected', 'edit'
-    todos: [
-      {
-        tid: 0,
-        title: 'Feed the dog',
-        labels: [],
-      }, {
-        tid: 1,
-        title: 'Get the milk',
-        labels: [],
-      }, {
-        tid: 2,
-        title: 'Do the laundry',
-        labels: [],
-      }, {
-        tid: 3,
-        title: 'Meet with John',
-        labels: [],
-      }
-    ],
-  },
-  setState(key, value) {
-    Vue.set(this.state, key, value);
-  },
+function normalShortcuts(keyCode, order, tid, dispatch) {
+  let pos = order.indexOf(tid);
+  if (keyCode === 38) {
+    if (pos > 0) {
+      dispatch('normalArrow', order[pos - 1]);
+    }
+  } else if (keyCode === 40) {
+    if (pos < order.length - 1) {
+      dispatch('normalArrow', order[pos + 1]);
+    }
+  } else if (keyCode === 13) {
+    dispatch('modeSet', {mode: 'selected', modesubHighlight: 'move'});
+  }
+}
+
+function selectedShortcuts(keyCode, order, tid, modesubHighlight, dispatch) {
+  let pos = order.indexOf(tid);
+  if (keyCode === 38) {
+    dispatch('modeSet', {mode: 'normal', modesubHighlight: ''});
+    if (pos > 0) {
+      dispatch('normalArrow', order[pos - 1]);
+    }
+  } else if (keyCode === 40) {
+    dispatch('modeSet', {mode: 'normal', modesubHighlight: ''});
+    if (pos < order.length - 1) {
+      dispatch('normalArrow', order[pos + 1]);
+    }
+  } else if (keyCode === 37) {
+    if (modesubHighlight === 'move') {
+      // pass
+    } else if (modesubHighlight === 'edit') {
+      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'move'});
+    } else if (modesubHighlight === 'delete') {
+      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'edit'});
+    }
+  } else if (keyCode === 39) {
+    if (modesubHighlight === 'move') {
+      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'edit'});
+    } else if (modesubHighlight === 'edit') {
+      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'delete'});
+    } else if (modesubHighlight === 'delete') {
+      // pass
+    }
+  } else if (keyCode === 13) {
+    if (modesubHighlight === 'move') {
+      dispatch('modeSet', {mode: 'move', modesubHighlight: ''});
+    } else if (modesubHighlight === 'edit') {
+      dispatch('modeSet', {mode: 'edit', modesubHighlight: ''});
+    } else if (modesubHighlight === 'delete') {
+      dispatch('deleteTodo', tid);
+    }
+  }
+}
+
+function moveShortcuts(keyCode, order, tid, dispatch) {
+  let pos = order.indexOf(tid);
+  if (keyCode === 38) {
+    if (pos > 0) {
+      dispatch('moveOrder', {pos0: pos, pos1: pos - 1, tid});
+    }
+  } else if (keyCode === 40) {
+    if (pos < order.length - 1) {
+      dispatch('moveOrder', {pos0: pos, pos1: pos + 1, tid});
+    }
+  } else if (keyCode === 13) {
+    dispatch('modeReset');
+  }
 }
 
 export default {
@@ -43,25 +83,40 @@ export default {
     Dash,
   },
   methods: {
+    ...mapActions([
+      'modeReset',
+      'normalArrow',
+    ]),
   },
-  data: function() {
-    return {
-      store: store,
-    };
+  computed: {
   },
   mounted() {
     window.addEventListener("keyup", e => {
-      if (e.keyCode === 38) { // up arrow
-        if (store.state.selected > 0) {
-          store.setState('selected', store.state.selected - 1);
-        }
+      if (e.keyCode === 27) {
+        this.$store.dispatch('modeReset', 1);
       }
-      if (e.keyCode === 40) { // down arrow
-        if (store.state.selected < store.state.todos.length - 1) {
-          store.setState('selected', store.state.selected + 1);
-        }
-      }
-      if (e.keyCode === 13) { // enter
+      if (this.$store.state.mode === 'normal') {
+        normalShortcuts(
+          e.keyCode,
+          this.$store.state.order,
+          this.$store.state.tid,
+          this.$store.dispatch
+        )
+      } else if (this.$store.state.mode === 'selected') {
+        selectedShortcuts(
+          e.keyCode,
+          this.$store.state.order,
+          this.$store.state.tid,
+          this.$store.state.modesubHighlight,
+          this.$store.dispatch
+        )
+      } else if (this.$store.state.mode === 'move') {
+        moveShortcuts(
+          e.keyCode,
+          this.$store.state.order,
+          this.$store.state.tid,
+          this.$store.dispatch
+        );
       }
     });
   },
