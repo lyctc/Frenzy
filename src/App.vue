@@ -1,16 +1,15 @@
 <template>
 <div id="app">
   <div class="titleBar">
-    <h1>Plan Your Next Frenzy</h1>
+    <h1>Frenzy is a Planning Tool</h1>
   </div>
   
-  <div style="display: flex;">
+  <div id="layers" style="display: flex; overflow: auto">
     <Layer
       v-for="layer in layerA"
       v-bind:key="layer.key"
-      v-bind:pos="layer.pos"
-      v-bind:itemA="layer.itemA"
-      style="width: 30%"
+      v-bind:step="layer.step"
+      style="width: 240px; flex: none;"
     />
   </div>
 </div>
@@ -19,6 +18,7 @@
 <script>
 import Layer from './components/Layer.vue'
 import { mapActions } from 'vuex';
+import { rebalancePathA, moveItemHelper, deleteItemHelper } from './lib.js'
 
 function normalShortcuts(keyCode, posA, itemA, dispatch) {
   let i;
@@ -57,45 +57,9 @@ function normalShortcuts(keyCode, posA, itemA, dispatch) {
   }
 }
 
-function moveItemHelper(dir, itemA0, posA0, step) {
-  let temp;
-  if (step === posA0.length - 1) {
-    console.log(dir);
-    console.log(itemA0);
-    if (dir === 'up' && posA0[step] > 0) {
-      temp = itemA0[posA0[step]];
-      itemA0.splice(posA0[step], 1);
-      itemA0.splice(posA0[step] - 1, 0, temp);
-      itemA0[posA0[step]].pathA[itemA0[posA0[step]].pathA.length - 1] = posA0[step];
-      itemA0[posA0[step] - 1].pathA[itemA0[posA0[step] - 1].pathA.length - 1] = posA0[step] - 1;
-    } else if (dir === 'down' && posA0[step] <= itemA0.length - 2) {
-      temp = itemA0[posA0[step]];
-      itemA0.splice(posA0[step], 1);
-      itemA0.splice(posA0[step] + 1, 0, temp);
-      itemA0[posA0[step]].pathA[itemA0[posA0[step]].pathA.length - 1] = posA0[step];
-      itemA0[posA0[step] + 1].pathA[itemA0[posA0[step] + 1].pathA.length - 1] = posA0[step] + 1;
-    }
-    console.log(itemA0);
-    return itemA0;
-  } else {
-    itemA0[posA0[step]].childA = moveItemHelper(dir, itemA0[posA0[step]].childA, posA0, step + 1);
-  }
-  return itemA0;
-}
-
-function deleteItemHelper(itemA0, posA0, step) {
-  // recursively go through itemA and update title to new title
-  if (step === posA0.length - 1) {
-    itemA0.splice(posA0[step], 1);
-    return itemA0;
-  } else {
-    itemA0[posA0[step]].childA = deleteItemHelper(itemA0[posA0[step]].childA, posA0, step + 1);
-  }
-  return itemA0;
-}
-
 function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
   let i;
+  let _;
   let posA0 = Array.from(posA);
   let itemA0 = Array.from(itemA);
   let itemAN = Array.from(itemA); // last layer
@@ -137,6 +101,7 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
       dispatch('updateMode', {mode: 'edit', modesub: ''});
     } else if (modesub === 'delete') {
       itemA0 = deleteItemHelper(itemA0, posA, 0);
+      _, itemA0 = rebalancePathA([], itemA0);
       dispatch('updateItemA', itemA0)
     }
   }
@@ -144,6 +109,7 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
 
 function moveShortcuts(keyCode, posA, itemA, dispatch) {
   let i;
+  let _;
   let posA0 = Array.from(posA);
   let itemA0 = Array.from(itemA);
   let itemAN = Array.from(itemA); // last layer
@@ -153,6 +119,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
   if (keyCode === 38) {
     if (posA0[posA0.length - 1] > 0) {
       itemA0 = moveItemHelper('up', itemA0, posA0, 0);
+      _, itemA0 = rebalancePathA([], itemA0);
       dispatch('updateItemA', itemA0)
       posA0[posA0.length - 1] -= 1;
       dispatch('updatePosA', posA0);
@@ -160,6 +127,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
   } else if (keyCode === 40) {
     if (posA0[posA0.length - 1] < itemAN.length - 1) {
       itemA0 = moveItemHelper('down', itemA0, posA0, 0);
+      _, itemA0 = rebalancePathA([], itemA0);
       dispatch('updateItemA', itemA0)
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
@@ -183,19 +151,23 @@ export default {
   computed: {
     layerA() {
       let i;
-      let layerA0 = [];
-      let itemA0 = this.$store.state.itemA;
+      let layerA = [];
+      let itemAN = Array.from(this.$store.state.itemA);
       for (i = 0; i < this.$store.state.posA.length; i += 1) {
-        layerA0.push({
-          key: `layer${i}`,
-          pos: this.$store.state.posA[i],
-          itemA: itemA0,
-        });
-        if (itemA0.length > 0 && this.$store.state.posA[i] < itemA0.length) {
-          itemA0 = itemA0[this.$store.state.posA[i]].childA;
+        layerA.push({key: `layer${i}`, step: i});
+        if (itemAN.length > 0 && this.$store.state.posA[i] < itemAN.length) {
+          itemAN = itemAN[this.$store.state.posA[i]].childA;
+        } else { // hit add new item
+          itemAN = [];
         }
       }
-      return layerA0;
+      if (itemAN.length > 0) { // preview
+        layerA.push({
+          key: `layer${this.$store.state.posA.length}`,
+          step: this.$store.state.posA.length
+        });
+      }
+      return layerA;
     },
     posA() {
       return this.$store.state.posA;
@@ -235,12 +207,33 @@ export default {
 </script>
 
 <style>
+:root {
+  --baseBG: #FFFFFF;
+  --baseFG: #000000;
+  --baseTableBorder: #CCCCCC;
+  --layerLeftBorder: #000000;
+  --itemAncestorBG: #EFEFEF;
+  --itemAncestorFG: #000000;
+  --itemSelectedBG: #B7FFFF;
+  --itemSelectedFG: #000000;
+  --itemSelectedButtonBG: #B7FFFF;
+  --itemSelectedButtonFG: #888888;
+  --modeSelectedBG: #FFFFB7;
+  --modeSelectedFG: #000000;
+  --modeUnselectedBG: #EEEEEE;
+  --modeUnselectedFG: #000000;
+}
+
+body {
+  background-color: var(--baseBG);
+  color: var(--baseFG);
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 12px;
-  color: #2c3e50;
   margin: 0 auto;
   width: 100%;
   max-width: 900px;
@@ -249,7 +242,7 @@ export default {
 .titleBar {
   width: 100%;
   text-align: center;
-  border-bottom: 2px solid #CCC;
+  border-bottom: 2px solid var(--baseTableBorder);
   padding: 10px 0px 10px 0px;
   margin-bottom: 20px;
 }

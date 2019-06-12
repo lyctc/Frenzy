@@ -16,43 +16,55 @@ export default new Vuex.Store( {
     itemA: [
       {
         pathA: [0],
-        title: 'Navigate with Arrow Keys',
+        title: 'Navigate with arrow keys',
         labelA: [],
         childA: [
           {
             pathA: [0, 0],
-            title: 'Up/Down to Move Within Layers',
+            title: 'Up/down to move within layers',
             labelA: [],
             childA: [],
           },
           {
             pathA: [0, 1],
-            title: 'Left/Right to Move Between Layers',
+            title: 'Left/right to move between layers',
             labelA: [],
             childA: [],
-          }
+          },
+          {
+            pathA: [0, 2],
+            title: 'Press enter, then left/right to edit',
+            labelA: [],
+            childA: [],
+          },
+          {
+            pathA: [0, 3],
+            title: 'Press escape to cancel',
+            labelA: [],
+            childA: [],
+          },
         ],
       },
       {
         pathA: [1],
-        title: 'Filter by Custom Tags',
+        title: 'Filter by custom tags',
         labelA: [],
         childA: [
           {
             pathA: [1, 0],
-            title: 'Press 1 to Highlight the New Features',
+            title: 'Press 1 to highlight the new features',
             labelA: [],
             childA: [],
           },
           {
             pathA: [1, 1],
-            title: 'Press 1 Again to Only Show New Features',
+            title: 'Press 1-1 to only show new features',
             labelA: [],
             childA: [],
           },
           {
             pathA: [1, 2],
-            title: 'Press 1 Again to Return to Overall Plan',
+            title: 'Press 1-1-1 to cancel',
             labelA: [],
             childA: [],
           },
@@ -60,19 +72,19 @@ export default new Vuex.Store( {
       },
       {
         pathA: [2],
-        title: 'Share with Access Controls',
+        title: 'Share with access controls',
         labelA: [],
         childA: [],
       },
       {
         pathA: [3],
-        title: 'Plan Multiple Frenzies',
+        title: 'Plan multiple frenzies',
         labelA: [],
         childA: [],
       },
       {
         pathA: [4],
-        title: 'Get Started for Free',
+        title: 'Get started for free',
         labelA: [],
         childA: [],
       },
