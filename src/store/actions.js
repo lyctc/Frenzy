@@ -1,20 +1,11 @@
 export default {
-  normalArrow({ commit }, tid) {
-    commit('normalArrow', tid);
+  updatePosA({ commit }, posA) {
+    commit('updatePosA', posA);
   },
-  modeReset({ commit }) {
-    commit('modeReset');
+  updateMode({ commit }, {mode, modesub}) {
+    commit('updateMode', {mode, modesub});
   },
-  modeSet({ commit }, {mode, modesubHighlight}) {
-    commit('modeSet', {mode, modesubHighlight});
-  },
-  moveOrder({ commit }, {pos0, pos1, tid}) {
-    commit('moveOrder', {pos0, pos1, tid});
-  },
-  addTodo ({ commit }, {tid, title}) {
-    commit('addTodo', {tid, title})
-  },
-  deleteTodo ({ commit }, tid) {
-    commit('deleteTodo', tid)
+  updateItemA({ commit }, itemA) {
+    commit('updateItemA', itemA);
   },
 }

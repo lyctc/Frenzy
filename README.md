@@ -1,1 +1,1 @@
-# Frenzy
+# Plan Your Next Frenzy

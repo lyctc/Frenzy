@@ -7,29 +7,76 @@ Vue.use(Vuex);
 
 export default new Vuex.Store( {
   state: {
-    tid: -1,
-    mode: 'normal', // 'normal', 'selected', 'move', 'edit'
-    modesubHighlight: '',
+    posA: [0, 0], // path of current position
+    pathA: [], // path of selected task
+    mode: 'normal', // 'normal', 'selected', 'move', 'edit', 'add'
     modesub: '',
-    order: ['0', '1', '2', '3'],
-    todos: {
-      0: {
-        title: 'Feed the dog',
-        labels: [],
+    addButtonVisible: false,
+    addInputVisible: false,
+    itemA: [
+      {
+        pathA: [0],
+        title: 'Navigate with Arrow Keys',
+        labelA: [],
+        childA: [
+          {
+            pathA: [0, 0],
+            title: 'Up/Down to Move Within Layers',
+            labelA: [],
+            childA: [],
+          },
+          {
+            pathA: [0, 1],
+            title: 'Left/Right to Move Between Layers',
+            labelA: [],
+            childA: [],
+          }
+        ],
       },
-      1: {
-        title: 'Get the milk',
-        labels: [],
+      {
+        pathA: [1],
+        title: 'Filter by Custom Tags',
+        labelA: [],
+        childA: [
+          {
+            pathA: [1, 0],
+            title: 'Press 1 to Highlight the New Features',
+            labelA: [],
+            childA: [],
+          },
+          {
+            pathA: [1, 1],
+            title: 'Press 1 Again to Only Show New Features',
+            labelA: [],
+            childA: [],
+          },
+          {
+            pathA: [1, 2],
+            title: 'Press 1 Again to Return to Overall Plan',
+            labelA: [],
+            childA: [],
+          },
+        ],
       },
-      2: {
-        title: 'Do the laundry',
-        labels: [],
+      {
+        pathA: [2],
+        title: 'Share with Access Controls',
+        labelA: [],
+        childA: [],
       },
-      3: {
-        title: 'Meet with John',
-        labels: [],
-      }
-    }
+      {
+        pathA: [3],
+        title: 'Plan Multiple Frenzies',
+        labelA: [],
+        childA: [],
+      },
+      {
+        pathA: [4],
+        title: 'Get Started for Free',
+        labelA: [],
+        childA: [],
+      },
+    ],
   },
   actions, 
   mutations,

@@ -1,120 +1,231 @@
 <template>
 <div id="app">
-  <Dash />
+  <div class="titleBar">
+    <h1>Plan Your Next Frenzy</h1>
+  </div>
+  
+  <div style="display: flex;">
+    <Layer
+      v-for="layer in layerA"
+      v-bind:key="layer.key"
+      v-bind:pos="layer.pos"
+      v-bind:itemA="layer.itemA"
+      style="width: 30%"
+    />
+  </div>
 </div>
 </template>
 
 <script>
-import Dash from './components/Dash.vue'
+import Layer from './components/Layer.vue'
 import { mapActions } from 'vuex';
 
-function normalShortcuts(keyCode, order, tid, dispatch) {
-  let pos = order.indexOf(tid);
-  if (keyCode === 38) {
-    if (pos > 0) {
-      dispatch('normalArrow', order[pos - 1]);
+function normalShortcuts(keyCode, posA, itemA, dispatch) {
+  let i;
+  let posA0 = Array.from(posA);
+  let itemAN = Array.from(itemA); // last layer
+  for (i = 0; i < posA.length - 1; i += 1) {
+    itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
+  }
+
+  if (keyCode === 38) { // up
+    if (posA0[posA0.length - 1] > 0) {
+      posA0[posA0.length - 1] -= 1;
+      dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 40) {
-    if (pos < order.length - 1) {
-      dispatch('normalArrow', order[pos + 1]);
+  } else if (keyCode === 40) { // down
+    if (posA0[posA0.length - 1] < itemAN.length) {
+      posA0[posA0.length - 1] += 1;
+      dispatch('updatePosA', posA0);
+    }
+  } else if (keyCode === 37) { // left
+    if (posA0.length > 1) {
+      posA0.pop();
+      dispatch('updatePosA', posA0);
+    }
+  } else if (keyCode === 39) { // right
+    if (itemAN.length > 0 && posA0[posA0.length - 1] < itemAN.length) {
+      posA0.push(0);
+      dispatch('updatePosA', posA0);
     }
   } else if (keyCode === 13) {
-    dispatch('modeSet', {mode: 'selected', modesubHighlight: 'move'});
+    if (posA0[posA0.length - 1] < itemAN.length) {
+      dispatch('updateMode', {mode: 'selected', modesub: 'move'});
+    } else if (posA0[posA0.length - 1] === itemAN.length) {
+      dispatch('updateMode', {mode: 'add', modesub: ''});
+    }
   }
 }
 
-function selectedShortcuts(keyCode, order, tid, modesubHighlight, dispatch) {
-  let pos = order.indexOf(tid);
-  if (keyCode === 38) {
-    dispatch('modeSet', {mode: 'normal', modesubHighlight: ''});
-    if (pos > 0) {
-      dispatch('normalArrow', order[pos - 1]);
+function moveItemHelper(dir, itemA0, posA0, step) {
+  let temp;
+  if (step === posA0.length - 1) {
+    console.log(dir);
+    console.log(itemA0);
+    if (dir === 'up' && posA0[step] > 0) {
+      temp = itemA0[posA0[step]];
+      itemA0.splice(posA0[step], 1);
+      itemA0.splice(posA0[step] - 1, 0, temp);
+      itemA0[posA0[step]].pathA[itemA0[posA0[step]].pathA.length - 1] = posA0[step];
+      itemA0[posA0[step] - 1].pathA[itemA0[posA0[step] - 1].pathA.length - 1] = posA0[step] - 1;
+    } else if (dir === 'down' && posA0[step] <= itemA0.length - 2) {
+      temp = itemA0[posA0[step]];
+      itemA0.splice(posA0[step], 1);
+      itemA0.splice(posA0[step] + 1, 0, temp);
+      itemA0[posA0[step]].pathA[itemA0[posA0[step]].pathA.length - 1] = posA0[step];
+      itemA0[posA0[step] + 1].pathA[itemA0[posA0[step] + 1].pathA.length - 1] = posA0[step] + 1;
     }
-  } else if (keyCode === 40) {
-    dispatch('modeSet', {mode: 'normal', modesubHighlight: ''});
-    if (pos < order.length - 1) {
-      dispatch('normalArrow', order[pos + 1]);
+    console.log(itemA0);
+    return itemA0;
+  } else {
+    itemA0[posA0[step]].childA = moveItemHelper(dir, itemA0[posA0[step]].childA, posA0, step + 1);
+  }
+  return itemA0;
+}
+
+function deleteItemHelper(itemA0, posA0, step) {
+  // recursively go through itemA and update title to new title
+  if (step === posA0.length - 1) {
+    itemA0.splice(posA0[step], 1);
+    return itemA0;
+  } else {
+    itemA0[posA0[step]].childA = deleteItemHelper(itemA0[posA0[step]].childA, posA0, step + 1);
+  }
+  return itemA0;
+}
+
+function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
+  let i;
+  let posA0 = Array.from(posA);
+  let itemA0 = Array.from(itemA);
+  let itemAN = Array.from(itemA); // last layer
+  for (i = 0; i < posA.length - 1; i += 1) {
+    itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
+  }
+  if (keyCode === 38) { // up
+    dispatch('updateMode', {mode: 'normal', modesub: ''});
+    if (posA[posA.length - 1] > 0) {
+      posA0[posA0.length - 1] -= 1;
+      dispatch('updatePosA', posA0);
+    }
+  } else if (keyCode === 40) { // down
+    dispatch('updateMode', {mode: 'normal', modesub: ''});
+    if (posA[posA.length - 1] < itemAN.length) {
+      posA0[posA0.length - 1] += 1;
+      dispatch('updatePosA', posA0);
     }
   } else if (keyCode === 37) {
-    if (modesubHighlight === 'move') {
+    if (modesub === 'move') {
       // pass
-    } else if (modesubHighlight === 'edit') {
-      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'move'});
-    } else if (modesubHighlight === 'delete') {
-      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'edit'});
+    } else if (modesub === 'edit') {
+      dispatch('updateMode', {mode: 'selected', modesub: 'move'});
+    } else if (modesub === 'delete') {
+      dispatch('updateMode', {mode: 'selected', modesub: 'edit'});
     }
   } else if (keyCode === 39) {
-    if (modesubHighlight === 'move') {
-      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'edit'});
-    } else if (modesubHighlight === 'edit') {
-      dispatch('modeSet', {mode: 'selected', modesubHighlight: 'delete'});
-    } else if (modesubHighlight === 'delete') {
+    if (modesub === 'move') {
+      dispatch('updateMode', {mode: 'selected', modesub: 'edit'});
+    } else if (modesub === 'edit') {
+      dispatch('updateMode', {mode: 'selected', modesub: 'delete'});
+    } else if (modesub === 'delete') {
       // pass
     }
   } else if (keyCode === 13) {
-    if (modesubHighlight === 'move') {
-      dispatch('modeSet', {mode: 'move', modesubHighlight: ''});
-    } else if (modesubHighlight === 'edit') {
-      dispatch('modeSet', {mode: 'edit', modesubHighlight: ''});
-    } else if (modesubHighlight === 'delete') {
-      dispatch('deleteTodo', tid);
+    if (modesub === 'move') {
+      dispatch('updateMode', {mode: 'move', modesub: ''});
+    } else if (modesub === 'edit') {
+      dispatch('updateMode', {mode: 'edit', modesub: ''});
+    } else if (modesub === 'delete') {
+      itemA0 = deleteItemHelper(itemA0, posA, 0);
+      dispatch('updateItemA', itemA0)
     }
   }
 }
 
-function moveShortcuts(keyCode, order, tid, dispatch) {
-  let pos = order.indexOf(tid);
+function moveShortcuts(keyCode, posA, itemA, dispatch) {
+  let i;
+  let posA0 = Array.from(posA);
+  let itemA0 = Array.from(itemA);
+  let itemAN = Array.from(itemA); // last layer
+  for (i = 0; i < posA.length - 1; i += 1) {
+    itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
+  }
   if (keyCode === 38) {
-    if (pos > 0) {
-      dispatch('moveOrder', {pos0: pos, pos1: pos - 1, tid});
+    if (posA0[posA0.length - 1] > 0) {
+      itemA0 = moveItemHelper('up', itemA0, posA0, 0);
+      dispatch('updateItemA', itemA0)
+      posA0[posA0.length - 1] -= 1;
+      dispatch('updatePosA', posA0);
     }
   } else if (keyCode === 40) {
-    if (pos < order.length - 1) {
-      dispatch('moveOrder', {pos0: pos, pos1: pos + 1, tid});
+    if (posA0[posA0.length - 1] < itemAN.length - 1) {
+      itemA0 = moveItemHelper('down', itemA0, posA0, 0);
+      dispatch('updateItemA', itemA0)
+      posA0[posA0.length - 1] += 1;
+      dispatch('updatePosA', posA0);
     }
   } else if (keyCode === 13) {
-    dispatch('modeReset');
+    dispatch('updateMode', {mode: 'normal', modesub: ''});
   }
 }
 
 export default {
   name: 'app',
   components: {
-    Dash,
+    Layer,
   },
   methods: {
     ...mapActions([
-      'modeReset',
-      'normalArrow',
+      'updateMode',
+      'updatePosA',
     ]),
   },
   computed: {
+    layerA() {
+      let i;
+      let layerA0 = [];
+      let itemA0 = this.$store.state.itemA;
+      for (i = 0; i < this.$store.state.posA.length; i += 1) {
+        layerA0.push({
+          key: `layer${i}`,
+          pos: this.$store.state.posA[i],
+          itemA: itemA0,
+        });
+        if (itemA0.length > 0 && this.$store.state.posA[i] < itemA0.length) {
+          itemA0 = itemA0[this.$store.state.posA[i]].childA;
+        }
+      }
+      return layerA0;
+    },
+    posA() {
+      return this.$store.state.posA;
+    },
   },
   mounted() {
     window.addEventListener("keyup", e => {
       if (e.keyCode === 27) {
-        this.$store.dispatch('modeReset', 1);
+        this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
       }
       if (this.$store.state.mode === 'normal') {
         normalShortcuts(
           e.keyCode,
-          this.$store.state.order,
-          this.$store.state.tid,
-          this.$store.dispatch
+          this.$store.state.posA,
+          this.$store.state.itemA,
+          this.$store.dispatch,
         )
       } else if (this.$store.state.mode === 'selected') {
         selectedShortcuts(
           e.keyCode,
-          this.$store.state.order,
-          this.$store.state.tid,
-          this.$store.state.modesubHighlight,
-          this.$store.dispatch
+          this.$store.state.posA,
+          this.$store.state.itemA,
+          this.$store.state.modesub,
+          this.$store.dispatch,
         )
       } else if (this.$store.state.mode === 'move') {
         moveShortcuts(
           e.keyCode,
-          this.$store.state.order,
-          this.$store.state.tid,
+          this.$store.state.posA,
+          this.$store.state.itemA,
           this.$store.dispatch
         );
       }
@@ -128,7 +239,25 @@ export default {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 12px;
   color: #2c3e50;
-  margin-top: 40px;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 900px;
 }
+
+.titleBar {
+  width: 100%;
+  text-align: center;
+  border-bottom: 2px solid #CCC;
+  padding: 10px 0px 10px 0px;
+  margin-bottom: 20px;
+}
+
+.titleBar h1 {
+  font-size: 1.3em;
+  padding: 0;
+  margin: 0;
+}
+
 </style>
