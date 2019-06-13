@@ -16,9 +16,23 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+Vue.use(VueAxios, axios)
+
 import Layer from './components/Layer.vue'
 import { mapActions } from 'vuex';
 import { rebalancePathA, moveItemHelper, deleteItemHelper } from './lib.js'
+
+function login() {
+	const params = new URLSearchParams();
+	params.append("email", "'Tony'");
+	params.append("password", "'default'");
+	axios.post("http://localhost:3030/login", params)
+    .then(response => console.log(response))
+    .catch(err => console.log(err));
+}
 
 function normalShortcuts(keyCode, posA, itemA, dispatch) {
   let i;
@@ -174,6 +188,8 @@ export default {
     },
   },
   mounted() {
+    console.log('-- mounted');
+    login();
     window.addEventListener("keyup", e => {
       if (e.keyCode === 27) {
         this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
