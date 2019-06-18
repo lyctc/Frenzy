@@ -29,48 +29,28 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 var jwtSecret []byte = []byte("getfromsecret")
+var psqlInfo = fmt.Sprintf("host=127.0.0.1 port=5432 user=postgres " +
+	"password=postgres dbname=frenzydb sslmode=disable")
+var db, err = sql.Open("postgres", psqlInfo)
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 type Claims struct {
-	uid int
+	UID int `json:"uid"`
 	jwt.StandardClaims
 }
 
-func validateToken(t string) interface{} {
-	// validates that token exists and is valid
-	if t == "" {
-		return nil
-	}
-	claims := &Claims{}
-	tkn, err := jwt.ParseWithClaims(t, claims, func(token *jwt.Token) (interface{}, error) {
-		return t, nil
-	})
-	if err != nil {
-		panic(err)
-	}
-	if !tkn.Valid {
-		return nil
-	}
-	return nil
-}
-
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	psqlInfo := fmt.Sprintf("host=127.0.0.1 port=5432 user=postgres " +
-		"password=postgres dbname=frenzydb sslmode=disable")
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-	err = r.ParseForm()
-	if err != nil {
-		panic(err)
-	}
+	log.Println("-- signup")
+	enableCors(&w)
+	r.ParseForm()
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 
@@ -82,56 +62,90 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Fprint(w, "new user added")
+	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1", email)
+	var (
+		uid            int
+		passwordStored string
+	)
+	err = result.Scan(&uid, &passwordStored)
+
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &Claims{
+		UID: uid,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	log.Println(tokenString)
+
+	if err != nil {
+		panic(err)
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write([]byte(`{"tokenString": "` + tokenString + `", "uid": ` + strconv.Itoa(uid) + `}`))
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("-- login")
 	enableCors(&w)
-	psqlInfo := fmt.Sprintf("host=127.0.0.1 port=5432 user=postgres " +
-		"password=postgres dbname=frenzydb sslmode=disable")
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	err = r.ParseForm()
-	if err != nil {
-		panic(err)
-	}
+	r.ParseForm()
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
-	log.Println(email)
-	log.Println(password)
 
-	result := db.QueryRow("SELECT password FROM users WHERE email=$1", email)
-	if err != nil {
+	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1", email)
+	var (
+		uid            int
+		passwordStored string
+	)
+	err := result.Scan(&uid, &passwordStored)
+
+	if err != nil { // email not found in database
 		panic(err)
 	}
-
-	var passwordStored string
-	result.Scan(&passwordStored)
 
 	err = bcrypt.CompareHashAndPassword([]byte(passwordStored), []byte(password))
 	if err != nil {
 		panic(err)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"uid": 0, // TODO: get uid
-	})
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &Claims{
+		UID: uid,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecret)
+
 	if err != nil {
 		panic(err)
 	}
 	w.Header().Set("content-type", "application/json")
-	w.Write([]byte(`{ "token": "` + tokenString + `" }`))
-	/*
-		http.SetCookie(w, &http.Cookie{
-			Name:  "token",
-			Value: tokenString,
-		})
-	*/
+	w.Write([]byte(`{"tokenString": "` + tokenString + `", "uid": ` + strconv.Itoa(uid) + `}`))
+}
 
+func refreshHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("-- refresh")
+	enableCors(&w)
+	r.ParseForm()
+	tokenString := r.PostFormValue("tokenString")
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if !token.Valid {
+		panic("-- token not valid")
+	}
+	if err != nil {
+		panic(err)
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write([]byte(`{"uid": ` + strconv.Itoa(claims.UID) + `}`))
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,12 +154,24 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadHandler(w http.ResponseWriter, r *http.Request) {
 	// load a plan
-	fmt.Fprint(w, "user logged in")
+	enableCors(&w)
+	r.ParseForm()
+	plan := r.PostFormValue("plan")
+	tokenString := r.PostFormValue("tokenString")
+	claims := &Claims{}
+	tkn, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if tkn.Valid && err == nil {
+		log.Println(claims.UID)
+		log.Println(plan)
+	}
 }
 
 func main() {
 	http.HandleFunc("/signup", signupHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/refresh", refreshHandler)
 	http.HandleFunc("/save", saveHandler)
 	http.HandleFunc("/load", loadHandler)
 	log.Fatal(http.ListenAndServe(":3030", nil))

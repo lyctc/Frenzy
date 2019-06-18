@@ -1,5 +1,31 @@
 <template>
 <div id="app">
+  <Login
+    v-if="page == 'login'"
+    v-bind:uid="uid"
+    v-on:update-uid="updateUID"
+  />
+  <Signup
+    v-if="page == 'signup'"
+    v-bind:uid="uid"
+    v-on:update-uid="updateUID"
+  />
+
+  <div style="width: 100%; display: flex">
+    <div v-if="" style="width: 30%">
+    </div>
+    <div v-if="" style="width: 40%">
+    </div>
+    <div v-if="uid == -1" style="width: 30%; text-align:right">
+      <button @click="page = 'login'">Log In</button>
+      <button @click="page = 'signup'">Sign Up</button>
+    </div>
+    <div v-if="uid != -1" style="width: 30%; text-align:right">
+      <button @click="handleLogout">Log Out</button>
+    </div>
+
+  </div>
+
   <div class="titleBar">
     <h1>Frenzy is a Planning Tool</h1>
   </div>
@@ -19,18 +45,24 @@
 import Vue from 'vue'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
+import VueCookies from 'vue-cookies'
+Vue.use(VueCookies)
 Vue.use(VueAxios, axios)
 
 import Layer from './components/Layer.vue'
+import Signup from './components/Signup.vue'
+import Login from './components/Login.vue'
 import { mapActions } from 'vuex';
 import { rebalancePathA, moveItemHelper, deleteItemHelper } from './lib.js'
 
-function login() {
+function loadPlan() {
 	const params = new URLSearchParams();
-	params.append("email", "'Tony'");
-	params.append("password", "'default'");
-	axios.post("http://localhost:3030/login", params)
-    .then(response => console.log(response))
+	params.append("plan", "3");
+	params.append("tokenString", window.$cookies.get('tokenString'));
+	axios.post("http://localhost:3030/load", params)
+    .then(response => {
+      console.log(response);
+    })
     .catch(err => console.log(err));
 }
 
@@ -153,14 +185,36 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
 
 export default {
   name: 'app',
+  data: function () {
+    return {
+      uid: -1,
+      pid: -1,
+      page: '', // '', 'login', 'signup'
+    }
+  },
   components: {
     Layer,
+    Signup,
+    Login,
   },
   methods: {
     ...mapActions([
       'updateMode',
       'updatePosA',
     ]),
+    loadPlan,
+    handleLogout: function () {
+      window.$cookies.set("tokenString", "");
+      this.uid = -1;
+    },
+    updateUID: function (uid) {
+      this.uid = uid;
+      this.page = "";
+    },
+    updatePID: function (pid) {
+      this.pid = pid;
+      this.page = "";
+    },
   },
   computed: {
     layerA() {
@@ -188,34 +242,47 @@ export default {
     },
   },
   mounted() {
-    console.log('-- mounted');
-    login();
+    if (this.uid == -1 && window.$cookies.get('tokenString')) {
+      // automatically log back in if cookie is set
+      const params = new URLSearchParams();
+      params.append("tokenString", window.$cookies.get('tokenString'));
+      axios.post("http://localhost:3030/refresh", params)
+        .then(response => {
+          this.uid = response.data.uid;
+        })
+        .catch(err => {
+          window.$cookies.set("tokenString", "");
+          this.uid = -1;
+        });
+    }
     window.addEventListener("keyup", e => {
-      if (e.keyCode === 27) {
-        this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
-      }
-      if (this.$store.state.mode === 'normal') {
-        normalShortcuts(
-          e.keyCode,
-          this.$store.state.posA,
-          this.$store.state.itemA,
-          this.$store.dispatch,
-        )
-      } else if (this.$store.state.mode === 'selected') {
-        selectedShortcuts(
-          e.keyCode,
-          this.$store.state.posA,
-          this.$store.state.itemA,
-          this.$store.state.modesub,
-          this.$store.dispatch,
-        )
-      } else if (this.$store.state.mode === 'move') {
-        moveShortcuts(
-          e.keyCode,
-          this.$store.state.posA,
-          this.$store.state.itemA,
-          this.$store.dispatch
-        );
+      if (this.page === '') {
+        if (e.keyCode === 27) {
+          this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
+        }
+        if (this.$store.state.mode === 'normal') {
+          normalShortcuts(
+            e.keyCode,
+            this.$store.state.posA,
+            this.$store.state.itemA,
+            this.$store.dispatch,
+          )
+        } else if (this.$store.state.mode === 'selected') {
+          selectedShortcuts(
+            e.keyCode,
+            this.$store.state.posA,
+            this.$store.state.itemA,
+            this.$store.state.modesub,
+            this.$store.dispatch,
+          )
+        } else if (this.$store.state.mode === 'move') {
+          moveShortcuts(
+            e.keyCode,
+            this.$store.state.posA,
+            this.$store.state.itemA,
+            this.$store.dispatch
+          );
+        }
       }
     });
   },
