@@ -1,42 +1,41 @@
 <template>
 <div id="app">
-  <Login
-    v-if="page == 'login'"
-    v-bind:uid="uid"
-    v-on:update-uid="updateUID"
-  />
-  <Signup
-    v-if="page == 'signup'"
-    v-bind:uid="uid"
-    v-on:update-uid="updateUID"
-  />
+  <Login v-if="Page == 'login'" />
+  <Signup v-if="Page == 'signup'" />
+  <Planlist v-if="Page == ''"/>
 
-  <div style="width: 100%; display: flex">
-    <div v-if="" style="width: 30%">
+  <div style="margin: 0px 14px;">
+    <div class="titleBar">
+      <div style="width: 30%; text-align: left;">
+        <button @click="handleList" style="margin-top: 6px; margin-left: 0px; border: 2px solid #000; background-color: #EEE; color: #000; font-weight: 600; border-radius: 3px; padding: 4px 10px;">Plans &#9662;</button>
+      </div>
+      <div style="width: 40%;">
+        <div v-if="mode !== 'title' && Title !== ''">
+          <h1 @click="handleTitle">{{Title}}</h1>
+        </div>
+        <div v-if="mode === 'title' || Title === ''">
+          <input type="text" v-model="title" placeholder="Title">
+        </div>
+      </div>
+      <div style="width: 30%; height: 100%; text-align: right;">
+        <div v-if="UID === -1">
+          <button @click="handleLogin" class="loginButton">Log In</button>
+          <button @click="handleSignup" class="signupButton">Sign Up</button>
+        </div>
+        <div v-if="UID !== -1">
+          <button @click="handleLogout" class="loginButton">Log Out</button>
+        </div>
+      </div>
     </div>
-    <div v-if="" style="width: 40%">
+   
+    <div id="layers" style="display: flex; overflow: auto">
+      <Layer
+        v-for="layer in layerA"
+        v-bind:key="layer.key"
+        v-bind:step="layer.step"
+        style="width: 240px; flex: none;"
+      />
     </div>
-    <div v-if="uid == -1" style="width: 30%; text-align:right">
-      <button @click="page = 'login'">Log In</button>
-      <button @click="page = 'signup'">Sign Up</button>
-    </div>
-    <div v-if="uid != -1" style="width: 30%; text-align:right">
-      <button @click="handleLogout">Log Out</button>
-    </div>
-
-  </div>
-
-  <div class="titleBar">
-    <h1>Frenzy is a Planning Tool</h1>
-  </div>
-  
-  <div id="layers" style="display: flex; overflow: auto">
-    <Layer
-      v-for="layer in layerA"
-      v-bind:key="layer.key"
-      v-bind:step="layer.step"
-      style="width: 240px; flex: none;"
-    />
   </div>
 </div>
 </template>
@@ -52,19 +51,9 @@ Vue.use(VueAxios, axios)
 import Layer from './components/Layer.vue'
 import Signup from './components/Signup.vue'
 import Login from './components/Login.vue'
+import Planlist from './components/Planlist.vue'
 import { mapActions } from 'vuex';
-import { rebalancePathA, moveItemHelper, deleteItemHelper } from './lib.js'
-
-function loadPlan() {
-	const params = new URLSearchParams();
-	params.append("plan", "3");
-	params.append("tokenString", window.$cookies.get('tokenString'));
-	axios.post("http://localhost:3030/load", params)
-    .then(response => {
-      console.log(response);
-    })
-    .catch(err => console.log(err));
-}
+import { rebalancePathA, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
 
 function normalShortcuts(keyCode, posA, itemA, dispatch) {
   let i;
@@ -185,35 +174,47 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
 
 export default {
   name: 'app',
-  data: function () {
-    return {
-      uid: -1,
-      pid: -1,
-      page: '', // '', 'login', 'signup'
-    }
-  },
   components: {
     Layer,
     Signup,
     Login,
+    Planlist,
   },
   methods: {
     ...mapActions([
+      'updatePage',
+      'updateUID',
+      'updatePID',
+      'updateTokenString',
       'updateMode',
       'updatePosA',
+      'updatePlanA',
     ]),
-    loadPlan,
+    handleList: function () {
+      const params = new URLSearchParams();
+      params.append('TokenString', window.$cookies.get('TokenString'));
+      axios.post('http://localhost:3030/list', params)
+        .then(response => {
+          this.$store.dispatch('updatePlanA', response.data.PlanA)
+        })
+    },
+    handleTitle: function () {
+      alert('hello world');
+    },
+    handleLogin: function () {
+      this.$store.dispatch('updatePage', 'login');
+    },
+    handleSignup: function () {
+      this.$store.dispatch('updatePage', 'signup');
+    },
     handleLogout: function () {
-      window.$cookies.set("tokenString", "");
-      this.uid = -1;
-    },
-    updateUID: function (uid) {
-      this.uid = uid;
-      this.page = "";
-    },
-    updatePID: function (pid) {
-      this.pid = pid;
-      this.page = "";
+      window.$cookies.set('TokenString', '');
+      this.$store.dispatch('updateTokenString', '');
+      this.$store.dispatch('updatePage', 'login');
+      this.$store.dispatch('updateUID', -1);
+      this.$store.dispatch('updatePID', -1);
+      this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
+      this.$store.dispatch('updateItemA', []);
     },
   },
   computed: {
@@ -237,26 +238,50 @@ export default {
       }
       return layerA;
     },
+    mode() {
+      return this.$store.state.mode;
+    },
+    Title() {
+      return this.$store.state.Title;
+    },
     posA() {
       return this.$store.state.posA;
     },
+    Page() {
+      return this.$store.state.Page;
+    },
+    UID() {
+      return this.$store.state.UID;
+    },
+    PID() {
+      return this.$store.state.PID;
+    },
   },
   mounted() {
-    if (this.uid == -1 && window.$cookies.get('tokenString')) {
+    if (this.$store.state.UID == -1 && window.$cookies.get('TokenString')) {
       // automatically log back in if cookie is set
+      this.$store.dispatch('updateTokenString', window.$cookies.get('TokenString'))
       const params = new URLSearchParams();
-      params.append("tokenString", window.$cookies.get('tokenString'));
-      axios.post("http://localhost:3030/refresh", params)
+      params.append('TokenString', window.$cookies.get('TokenString'));
+      axios.post('http://localhost:3030/refresh', params)
         .then(response => {
-          this.uid = response.data.uid;
+          this.$store.dispatch('updateUID', response.data.UID)
+          this.$store.dispatch('updatePID', response.data.PID)
+          this.$store.dispatch('updateTitle', response.data.Title)
+          this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
+          this.$store.dispatch('updatePosA', [0])
+          this.pid = response.data.PID;
         })
         .catch(err => {
-          window.$cookies.set("tokenString", "");
-          this.uid = -1;
+          window.$cookies.set('TokenString', '');
+          this.$store.dispatch('updateUID', -1)
         });
+    } else if (this.$store.state.UID == -1) {
+      this.$store.dispatch('updateItemA', defaultItemA());
+      this.$store.dispatch('updatePosA', [0, 0]);
     }
-    window.addEventListener("keyup", e => {
-      if (this.page === '') {
+    window.addEventListener('keyup', e => {
+      if (this.$store.state.Page === '') {
         if (e.keyCode === 27) {
           this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
         }
@@ -305,11 +330,16 @@ export default {
   --modeSelectedFG: #000000;
   --modeUnselectedBG: #EEEEEE;
   --modeUnselectedFG: #000000;
+  --buttonLoginFG: #EEEEEE;
+  --buttonLoginBG: #555555;
+  --buttonSignupFG: #EEEEEE;
+  --buttonSignupBG: #555555;
 }
 
 body {
   background-color: var(--baseBG);
   color: var(--baseFG);
+  margin: 0px;
 }
 
 #app {
@@ -317,23 +347,42 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 12px;
-  margin: 0 auto;
   width: 100%;
-  max-width: 900px;
 }
 
 .titleBar {
   width: 100%;
   text-align: center;
   border-bottom: 2px solid var(--baseTableBorder);
-  padding: 10px 0px 10px 0px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  height: 40px;
+  display: flex;
 }
 
 .titleBar h1 {
-  font-size: 1.3em;
+  font-size: 1.4em;
   padding: 0;
-  margin: 0;
+  margin-top: 12px;
+}
+
+.titleBar button {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 5px;
+  margin-top: 7px;
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 0.7em;
+}
+
+.titleBar .loginButton {
+  color: var(--buttonLoginFG);
+  background-color: var(--buttonLoginBG);
+}
+
+.titleBar .signupButton {
+  color: var(--buttonSignupFG);
+  background-color: var(--buttonSignupBG);
 }
 
 </style>
