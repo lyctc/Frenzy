@@ -388,7 +388,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	PID := r.PostFormValue("PID")
 	TokenString := r.PostFormValue("TokenString")
 	UID := jwtValidate(TokenString)
-	db.QueryRow("DELETE FROM plans WHERE uid=$1 AND pid=$2", UID, PID)
+	db.Query("DELETE FROM plans WHERE uid=$1 AND pid=$2", UID, PID)
 }
 
 func loadHandler(w http.ResponseWriter, r *http.Request) {
