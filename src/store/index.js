@@ -10,7 +10,7 @@ export default new Vuex.Store( {
     UID: -1,
     PID: -1,
     PlanA: [],
-    Title: 'Plan Your Next Frenzy',
+    Title: '',
     Page: '',
     posA: [0], // path of current position
     pathA: [], // path of selected task

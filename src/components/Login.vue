@@ -58,16 +58,19 @@ export default {
       params.append('password', this.password);
       axios.post('http://localhost:3030/login', params)
         .then(response => {
+          console.log(response.data.ItemA);
           window.$cookies.set('TokenString', response.data.TokenString);
           this.$store.dispatch('updateTokenString', response.data.TokenString)
           this.$store.dispatch('updateUID', response.data.UID)
           this.$store.dispatch('updatePID', response.data.PID)
           this.$store.dispatch('updateTitle', response.data.Title)
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
+          this.$store.dispatch('updatePosA', [0])
           this.$store.dispatch('updatePage', '')
         })
         .catch(err => {
           console.log('-- login failed');
+          this.error = err;
         });
     }
   },
@@ -109,6 +112,7 @@ export default {
 }
 
 .loginFG input {
+  z-index: 500;
   width: 100%;
 }
 

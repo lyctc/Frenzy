@@ -2,32 +2,9 @@
 <div id="app">
   <Login v-if="Page == 'login'" />
   <Signup v-if="Page == 'signup'" />
-  <Planlist v-if="Page == ''"/>
 
-  <div style="margin: 0px 14px;">
-    <div class="titleBar">
-      <div style="width: 30%; text-align: left;">
-        <button @click="handleList" style="margin-top: 6px; margin-left: 0px; border: 2px solid #000; background-color: #EEE; color: #000; font-weight: 600; border-radius: 3px; padding: 4px 10px;">Plans &#9662;</button>
-      </div>
-      <div style="width: 40%;">
-        <div v-if="mode !== 'title' && Title !== ''">
-          <h1 @click="handleTitle">{{Title}}</h1>
-        </div>
-        <div v-if="mode === 'title' || Title === ''">
-          <input type="text" v-model="title" placeholder="Title">
-        </div>
-      </div>
-      <div style="width: 30%; height: 100%; text-align: right;">
-        <div v-if="UID === -1">
-          <button @click="handleLogin" class="loginButton">Log In</button>
-          <button @click="handleSignup" class="signupButton">Sign Up</button>
-        </div>
-        <div v-if="UID !== -1">
-          <button @click="handleLogout" class="loginButton">Log Out</button>
-        </div>
-      </div>
-    </div>
-   
+  <div v-if="Page == ''" style="margin: 0px 14px;z-index: 0;">
+    <TitleBar />
     <div id="layers" style="display: flex; overflow: auto">
       <Layer
         v-for="layer in layerA"
@@ -51,7 +28,7 @@ Vue.use(VueAxios, axios)
 import Layer from './components/Layer.vue'
 import Signup from './components/Signup.vue'
 import Login from './components/Login.vue'
-import Planlist from './components/Planlist.vue'
+import TitleBar from './components/TitleBar.vue'
 import { mapActions } from 'vuex';
 import { rebalancePathA, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
 
@@ -178,7 +155,7 @@ export default {
     Layer,
     Signup,
     Login,
-    Planlist,
+    TitleBar,
   },
   methods: {
     ...mapActions([
@@ -188,34 +165,8 @@ export default {
       'updateTokenString',
       'updateMode',
       'updatePosA',
-      'updatePlanA',
+      'updateTitle',
     ]),
-    handleList: function () {
-      const params = new URLSearchParams();
-      params.append('TokenString', window.$cookies.get('TokenString'));
-      axios.post('http://localhost:3030/list', params)
-        .then(response => {
-          this.$store.dispatch('updatePlanA', response.data.PlanA)
-        })
-    },
-    handleTitle: function () {
-      alert('hello world');
-    },
-    handleLogin: function () {
-      this.$store.dispatch('updatePage', 'login');
-    },
-    handleSignup: function () {
-      this.$store.dispatch('updatePage', 'signup');
-    },
-    handleLogout: function () {
-      window.$cookies.set('TokenString', '');
-      this.$store.dispatch('updateTokenString', '');
-      this.$store.dispatch('updatePage', 'login');
-      this.$store.dispatch('updateUID', -1);
-      this.$store.dispatch('updatePID', -1);
-      this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
-      this.$store.dispatch('updateItemA', []);
-    },
   },
   computed: {
     layerA() {
@@ -240,9 +191,6 @@ export default {
     },
     mode() {
       return this.$store.state.mode;
-    },
-    Title() {
-      return this.$store.state.Title;
     },
     posA() {
       return this.$store.state.posA;
@@ -278,6 +226,7 @@ export default {
         });
     } else if (this.$store.state.UID == -1) {
       this.$store.dispatch('updateItemA', defaultItemA());
+      this.$store.dispatch('updateTitle', "Plan Your Next Frenzy");
       this.$store.dispatch('updatePosA', [0, 0]);
     }
     window.addEventListener('keyup', e => {
@@ -348,41 +297,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 12px;
   width: 100%;
-}
-
-.titleBar {
-  width: 100%;
-  text-align: center;
-  border-bottom: 2px solid var(--baseTableBorder);
-  margin-bottom: 10px;
-  height: 40px;
-  display: flex;
-}
-
-.titleBar h1 {
-  font-size: 1.4em;
-  padding: 0;
-  margin-top: 12px;
-}
-
-.titleBar button {
-  padding: 4px 12px;
-  border: none;
-  border-radius: 5px;
-  margin-top: 7px;
-  margin-left: 6px;
-  font-weight: 600;
-  font-size: 0.7em;
-}
-
-.titleBar .loginButton {
-  color: var(--buttonLoginFG);
-  background-color: var(--buttonLoginBG);
-}
-
-.titleBar .signupButton {
-  color: var(--buttonSignupFG);
-  background-color: var(--buttonSignupBG);
 }
 
 </style>

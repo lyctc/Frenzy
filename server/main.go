@@ -5,8 +5,8 @@
 	go get github.com/dgrijalva/jwt-go
 
 	CREATE DATABASE frenzydb
-	CREATE TABLE users (uid BIGSERIAL, email TEXT, password BYTEA, primary key (uid, email));
-	CREATE TABLE plans (pid BIGSERIAL, uid BIGINT, title TEXT, itemA TEXT, primary key (pid, uid));
+	CREATE TABLE users (uid BIGSERIAL, email TEXT, password BYTEA, ts TIMESTAMP, primary key (uid, email, ts));
+	CREATE TABLE plans (pid BIGSERIAL, uid BIGINT, title TEXT, itemA TEXT, ts TIMESTAMP, primary key (pid, uid, ts));
 
 	go run server/main.go
 
@@ -53,14 +53,13 @@ func jwtValidate(TokenString string) int {
 	token, err := jwt.ParseWithClaims(TokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
-	if !token.Valid || err != nil {
+	if token != nil && err != nil {
 		panic("-- token not valid")
 	}
 	return claims.UID
 }
 
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("-- signup")
 	var (
 		uid       int
 		passwordS string
@@ -82,31 +81,31 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.PostFormValue("password")
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	ts := time.Now()
 	_, err = db.Query(
-		"INSERT INTO users (email, password) VALUES ($1, $2)", email, string(hashed),
+		"INSERT INTO users (email, password, ts) VALUES ($1, $2, $3)", email, string(hashed), ts,
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1", email)
+	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1 ORDER BY ts DESC", email)
 	err = result.Scan(&uid, &passwordS)
 
+	ts = time.Now()
 	_, err = db.Query(
-		"INSERT INTO plans (uid, title, itemA) VALUES ($1, $2, $3)", uid, "", "[]",
+		"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", uid, "Blank Title", "[]", ts,
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1", uid)
+	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", uid)
 	err = result.Scan(&PID, &Title, &ItemA)
 
 	claims := &Claims{
-		UID: uid,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
-		},
+		UID:            uid,
+		StandardClaims: jwt.StandardClaims{},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -147,13 +146,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		Title       string
 	}
 
-	log.Println("-- login")
 	enableCors(&w)
 	r.ParseForm()
 	email = r.PostFormValue("email")
 	password = r.PostFormValue("password")
 
-	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1", email)
+	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1 ORDER BY ts DESC", email)
 	err = result.Scan(&UID, &passwordS)
 	if err != nil { // email not found in database
 		panic(err)
@@ -164,10 +162,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := &Claims{
-		UID: UID,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
-		},
+		UID:            UID,
+		StandardClaims: jwt.StandardClaims{},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -176,8 +172,19 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1", claims.UID)
+	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", claims.UID)
 	err = result.Scan(&PID, &Title, &ItemA)
+	if err != nil {
+		ts := time.Now()
+		_, err = db.Query(
+			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
+		)
+		if err != nil {
+			panic(err)
+		}
+		result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
+		err = result.Scan(&PID, &Title, &ItemA)
+	}
 
 	w.Header().Set("content-type", "application/json")
 	b, err := json.Marshal(RespStruct{
@@ -213,8 +220,20 @@ func refreshHandler(w http.ResponseWriter, r *http.Request) {
 	TokenString := r.PostFormValue("TokenString")
 	UID = jwtValidate(TokenString)
 
-	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1", UID)
+	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
 	err = result.Scan(&PID, &Title, &ItemA)
+
+	if err != nil {
+		ts := time.Now()
+		_, err = db.Query(
+			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
+		)
+		if err != nil {
+			panic(err)
+		}
+		result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
+		err = result.Scan(&PID, &Title, &ItemA)
+	}
 
 	w.Header().Set("content-type", "application/json")
 	b, err := json.Marshal(RespStruct{
@@ -236,19 +255,50 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	TokenString := r.PostFormValue("TokenString")
 	pid := r.PostFormValue("PID")
 	itemA := r.PostFormValue("ItemA")
-	log.Println(TokenString)
 	uid := jwtValidate(TokenString)
 
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
 
+	ts := time.Now()
 	_, err = db.Query(
-		"UPDATE plans SET itemA=$1 WHERE uid=$2 and pid=$3", itemA, uid, pid,
+		"UPDATE plans SET itemA=$1, ts=$2 WHERE uid=$3 and pid=$4", itemA, ts, uid, pid,
 	)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func titleHandler(w http.ResponseWriter, r *http.Request) {
+	// update title of plan
+	type RespStruct struct {
+		Title string
+	}
+	enableCors(&w)
+	r.ParseForm()
+	TokenString := r.PostFormValue("TokenString")
+	PID := r.PostFormValue("PID")
+	Title := r.PostFormValue("Title")
+	UID := jwtValidate(TokenString)
+
+	ts := time.Now()
+	_, err = db.Query(
+		"UPDATE plans SET title=$1, ts=$2 WHERE uid=$3 and pid=$4", Title, ts, UID, PID,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("content-type", "application/json")
+	b, err := json.Marshal(RespStruct{
+		Title: Title,
+	})
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	w.Write([]byte(b))
+
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +314,11 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var planA []PlanStruct
 
-	rows, err := db.Query("SELECT pid, title FROM plans WHERE uid=$1", UID)
+	type RespStruct struct {
+		PlanA []PlanStruct
+	}
+
+	rows, err := db.Query("SELECT pid, title FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
 	if err != nil {
 		panic(err)
 	}
@@ -280,27 +334,10 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			Title: Title,
 		})
 	}
-	log.Println(json.Marshal(planA))
-}
-
-func addPlanHandler(w http.ResponseWriter, r *http.Request) {
-	var PID int
-	type RespStruct struct {
-		PID string
-	}
-
-	enableCors(&w)
-	r.ParseForm()
-	TokenString := r.PostFormValue("TokenString")
-	UID := jwtValidate(TokenString)
-
-	_ = db.QueryRow(
-		"INSERT INTO plans (uid, title, itemA) VALUES ($1, $2, $3) RETURNING pid", UID, "New Plan", "[]",
-	).Scan(&PID)
 
 	w.Header().Set("content-type", "application/json")
 	b, err := json.Marshal(RespStruct{
-		PID: strconv.Itoa(PID),
+		PlanA: planA,
 	})
 	if err != nil {
 		fmt.Println("error:", err)
@@ -308,15 +345,82 @@ func addPlanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(b))
 }
 
-func loadHandler(w http.ResponseWriter, r *http.Request) {
-	// load a plan
+func addHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		PID   int
+		ItemA string
+		Title string
+	)
+	type RespStruct struct {
+		PID   string
+		ItemA string
+		Title string
+	}
+
 	enableCors(&w)
 	r.ParseForm()
-	PID := r.PostFormValue("pid")
 	TokenString := r.PostFormValue("TokenString")
 	UID := jwtValidate(TokenString)
-	log.Println(PID)
-	log.Println(UID)
+
+	ts := time.Now()
+	_ = db.QueryRow(
+		"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4) RETURNING pid", UID, "Blank Title", "[]", ts,
+	).Scan(&PID)
+
+	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
+	err = result.Scan(&PID, &Title, &ItemA)
+
+	w.Header().Set("content-type", "application/json")
+	b, err := json.Marshal(RespStruct{
+		PID:   strconv.Itoa(PID),
+		ItemA: strconv.Itoa(PID),
+		Title: Title,
+	})
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	w.Write([]byte(b))
+}
+
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	r.ParseForm()
+	PID := r.PostFormValue("PID")
+	TokenString := r.PostFormValue("TokenString")
+	UID := jwtValidate(TokenString)
+	db.QueryRow("DELETE FROM plans WHERE uid=$1 AND pid=$2", UID, PID)
+}
+
+func loadHandler(w http.ResponseWriter, r *http.Request) {
+	// load a plan
+	var (
+		Title string
+		ItemA string
+	)
+	type RespStruct struct {
+		PID   string
+		ItemA string
+		Title string
+	}
+	enableCors(&w)
+	r.ParseForm()
+	PID := r.PostFormValue("PID")
+	TokenString := r.PostFormValue("TokenString")
+	UID := jwtValidate(TokenString)
+
+	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
+	err = result.Scan(&PID, &Title, &ItemA)
+
+	w.Header().Set("content-type", "application/json")
+	b, err := json.Marshal(RespStruct{
+		PID:   PID,
+		ItemA: ItemA,
+		Title: Title,
+	})
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	w.Write([]byte(b))
 }
 
 func main() {
@@ -324,7 +428,10 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/refresh", refreshHandler)
 	http.HandleFunc("/save", saveHandler)
+	http.HandleFunc("/title", titleHandler)
 	http.HandleFunc("/list", listHandler)
+	http.HandleFunc("/add", addHandler)
 	http.HandleFunc("/load", loadHandler)
+	http.HandleFunc("/delete", deleteHandler)
 	log.Fatal(http.ListenAndServe(":3030", nil))
 }

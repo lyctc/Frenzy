@@ -3,7 +3,7 @@
  <div class="layerLeftBorder">
     <div v-for="item in itemAN"
       v-bind:key="item.pathA.toString()"
-      style="margin: 0px 0px 10px 0px;"
+      style="margin: 0px 0px 10px 0px; position: relative;"
     >
       <div
         class="item"
@@ -15,6 +15,9 @@
       >
         <div v-if="!(mode === 'edit' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString())" class="itemTitle">
           {{item.title}}
+          <div v-if="item.childA.length !== 0" style="position:absolute; display: inline-block; left: 210px; color: #999; font-weight: 600;">
+            {{item.childA.length}}
+          </div>
         </div>
         <div v-if="mode === 'edit' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString()">
           <input v-select type="text" :value="item.title" @keyup.enter="updateItem" />

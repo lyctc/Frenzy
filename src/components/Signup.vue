@@ -37,6 +37,7 @@ export default {
     return {
       email: '',
       password: '',
+      error: '',
     }
   },
   props: [],
@@ -63,8 +64,12 @@ export default {
           this.$store.dispatch('updatePID', response.data.PID)
           this.$store.dispatch('updateTitle', response.data.Title)
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
+          this.$store.dispatch('updatePosA', [0])
         })
-      .catch(err => console.log(err));
+        .catch(err => {
+          console.log('-- login failed');
+          this.error = err;
+        });
     }
   },
   computed: {
@@ -105,6 +110,7 @@ export default {
 }
 
 .signupFG input {
+  z-index: 500;
   width: 100%;
 }
 
