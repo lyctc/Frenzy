@@ -47,7 +47,7 @@ import { mapActions } from 'vuex';
 import { rebalancePathA, addItemHelper, updateItemHelper } from '../lib.js'
 
 export default {
-  name: 'layer',
+  name: 'Layer',
   props: ['step'],
   components: {},
   directives: {

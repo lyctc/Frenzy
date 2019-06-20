@@ -10,7 +10,7 @@ function updateItemADB(TokenString, uid, pid, itemA) {
     params.append('UID', uid);
     params.append('PID', pid);
     params.append('ItemA', itemA);
-    axios.post('http://localhost:3030/save', params)
+    axios.post(process.env.VUE_APP_AXIOS + 'save', params)
   }
 }
 

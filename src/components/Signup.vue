@@ -26,13 +26,12 @@
 
 <script>
 import Vue from 'vue'
-import { mapActions } from 'vuex';
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 Vue.use(VueAxios, axios)
 
 export default {
-  name: 'signup',
+  name: 'Signup',
   data: function () {
     return {
       email: '',
@@ -55,7 +54,7 @@ export default {
       const params = new URLSearchParams();
       params.append('email', this.email);
       params.append('password', this.password);
-      axios.post('http://localhost:3030/signup', params)
+      axios.post(process.env.VUE_APP_AXIOS + 'signup', params)
         .then(response => {
           window.$cookies.set('TokenString', response.data.TokenString);
           this.$store.dispatch('updateTokenString', response.data.TokenString)
@@ -67,7 +66,6 @@ export default {
           this.$store.dispatch('updatePosA', [0])
         })
         .catch(err => {
-          console.log('-- login failed');
           this.error = err;
         });
     }

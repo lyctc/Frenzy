@@ -32,7 +32,7 @@ import VueAxios from 'vue-axios'
 Vue.use(VueAxios, axios)
 
 export default {
-  name: 'login',
+  name: 'Login',
   data: function () {
     return {
       error: '',
@@ -56,9 +56,8 @@ export default {
       const params = new URLSearchParams();
       params.append('email', this.email);
       params.append('password', this.password);
-      axios.post('http://localhost:3030/login', params)
+      axios.post(process.env.VUE_APP_AXIOS + 'login', params)
         .then(response => {
-          console.log(response.data.ItemA);
           window.$cookies.set('TokenString', response.data.TokenString);
           this.$store.dispatch('updateTokenString', response.data.TokenString)
           this.$store.dispatch('updateUID', response.data.UID)
@@ -69,7 +68,6 @@ export default {
           this.$store.dispatch('updatePage', '')
         })
         .catch(err => {
-          console.log('-- login failed');
           this.error = err;
         });
     }

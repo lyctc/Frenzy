@@ -1,5 +1,7 @@
 /*
 
+	nohup JWTSECRET= go run main.go &
+
 	go get golang.org/x/crypto/bcrypt
 	go get github.com/lib/pq
 	go get github.com/dgrijalva/jwt-go
@@ -9,13 +11,6 @@
 	CREATE TABLE plans (pid BIGSERIAL, uid BIGINT, title TEXT, itemA TEXT, ts TIMESTAMP, primary key (pid, uid, ts));
 
 	go run server/main.go
-
-	curl --data "email='Tony'" --data "password='default'" localhost:3030/signup
-	curl --data "email='Tony'" --data "password='wrong'" localhost:3030/login
-	curl --data "email='Tony'" --data "password='default'" localhost:3030/login
-
-	curl --data "email='Tony'" --data "password='default'" http://localhost:3030/login
-	curl http://localhost:3030/login?email=Tony&password=default
 
 */
 
@@ -30,11 +25,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
 
-var jwtSecret []byte = []byte("getfromsecret")
+var jwtSecret []byte = []byte(os.Getenv("JWTSECRET"))
 var psqlInfo = fmt.Sprintf("host=127.0.0.1 port=5432 user=postgres " +
 	"password=postgres dbname=frenzydb sslmode=disable")
 var db, err = sql.Open("postgres", psqlInfo)

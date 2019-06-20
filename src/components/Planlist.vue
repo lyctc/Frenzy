@@ -5,7 +5,7 @@
       <div @click="handleAddPlan" class="planOption" style="border-bottom: 2px solid #CCC">
         <p>Add New Plan</p>
       </div>
-      <div v-for="plan in PlanA" @click="handleSelectPlan(plan.PID, $event)" class="planOption">
+      <div v-for="plan in PlanA" v-bind:key="plan.PID" @click="handleSelectPlan(plan.PID)" class="planOption">
         <p>{{plan.Title}}</p>
       </div>
     </div>
@@ -23,7 +23,7 @@ Vue.use(VueAxios, axios)
 
 
 export default {
-  name: 'planlist',
+  name: 'Planlist',
   data: function () {
     return {
       showF: false,
@@ -43,7 +43,7 @@ export default {
       if (!this.showF) {
         const params = new URLSearchParams();
         params.append('TokenString', window.$cookies.get('TokenString'));
-        axios.post('http://localhost:3030/list', params)
+        axios.post(process.env.VUE_APP_AXIOS + 'list', params)
           .then(response => {
             this.PlanA = response.data.PlanA;
             this.showF = true;
@@ -52,10 +52,10 @@ export default {
           this.showF = false;
       }
     },
-    handleAddPlan: function (event) {
+    handleAddPlan: function () {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
-      axios.post('http://localhost:3030/add', params)
+      axios.post(process.env.VUE_APP_AXIOS + 'add', params)
         .then(response => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);
@@ -64,11 +64,11 @@ export default {
           this.showF = false;
         })
     },
-    handleSelectPlan: function (PID, event) {
+    handleSelectPlan: function (PID) {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('PID', PID);
-      axios.post('http://localhost:3030/load', params)
+      axios.post(process.env.VUE_APP_AXIOS + 'load', params)
         .then(response => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);

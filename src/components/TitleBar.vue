@@ -70,8 +70,8 @@ export default {
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('Title', this.titleNew);
       params.append('PID', this.$store.state.PID);
-      axios.post('http://localhost:3030/title', params)
-        .then(response => {
+      axios.post(process.env.VUE_APP_AXIOS + 'title', params)
+        .then(() => {
           this.$store.dispatch('updateTitle', this.titleNew);
           this.showF = true;
         })
@@ -81,8 +81,8 @@ export default {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('PID', this.$store.state.PID);
-      axios.post('http://localhost:3030/delete', params)
-        .then(response => {
+      axios.post(process.env.VUE_APP_AXIOS + 'delete', params)
+        .then(() => {
           location.reload();
         })
     },
@@ -129,7 +129,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .titleBar {
   width: 100%;
   text-align: center;

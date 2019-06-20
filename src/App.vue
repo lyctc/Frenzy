@@ -150,7 +150,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
 }
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
     Layer,
     Signup,
@@ -211,7 +211,7 @@ export default {
       this.$store.dispatch('updateTokenString', window.$cookies.get('TokenString'))
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
-      axios.post('http://localhost:3030/refresh', params)
+      axios.post(process.env.VUE_APP_AXIOS + 'refresh', params)
         .then(response => {
           this.$store.dispatch('updateUID', response.data.UID)
           this.$store.dispatch('updatePID', response.data.PID)
@@ -220,7 +220,7 @@ export default {
           this.$store.dispatch('updatePosA', [0])
           this.pid = response.data.PID;
         })
-        .catch(err => {
+        .catch(() => {
           window.$cookies.set('TokenString', '');
           this.$store.dispatch('updateUID', -1)
         });
@@ -263,28 +263,7 @@ export default {
 };
 </script>
 
-<style>
-:root {
-  --baseBG: #FFFFFF;
-  --baseFG: #000000;
-  --baseTableBorder: #CCCCCC;
-  --layerLeftBorder: #000000;
-  --itemAncestorBG: #EFEFEF;
-  --itemAncestorFG: #000000;
-  --itemSelectedBG: #B7FFFF;
-  --itemSelectedFG: #000000;
-  --itemSelectedButtonBG: #B7FFFF;
-  --itemSelectedButtonFG: #888888;
-  --modeSelectedBG: #FFFFB7;
-  --modeSelectedFG: #000000;
-  --modeUnselectedBG: #EEEEEE;
-  --modeUnselectedFG: #000000;
-  --buttonLoginFG: #EEEEEE;
-  --buttonLoginBG: #555555;
-  --buttonSignupFG: #EEEEEE;
-  --buttonSignupBG: #555555;
-}
-
+<style scoped>
 body {
   background-color: var(--baseBG);
   color: var(--baseFG);
