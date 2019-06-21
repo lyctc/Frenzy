@@ -4,8 +4,8 @@
     <div v-if="UID !== -1">
       <Planlist style="display:inline-block;" />
       <div v-if="buttonF" style="display:inline-block;">
-        <button @click="handleDelete">Delete Plan</button>
-        <button @click="handleEditTitle">Edit Title</button>
+        <button @click="handleDelete" class="buttonPlanAction">Delete Plan</button>
+        <button @click="handleEditTitle" class="buttonPlanAction">Edit Title</button>
       </div>
     </div>
   </div>
@@ -13,7 +13,7 @@
     <div v-if="!editF && this.$store.state.Title !== ''">
       <h1 @click="handleEditTitle">{{this.$store.state.Title}}</h1>
     </div>
-    <div v-if="editF || this.$store.state.Title === ''" style="padding-top: 10px">
+    <div v-if="editF || this.$store.state.Title === ''">
       <input v-select type="text" v-model="titleNew" v-on:keyup.enter="handleEditTitleSubmit" placeholder="Title" />
     </div>
   </div>
@@ -22,8 +22,8 @@
       <button @click="handleLogin" class="loginButton">Log In</button>
       <button @click="handleSignup" class="signupButton">Sign Up</button>
     </div>
-    <div v-if="UID !== -1">
-      <button @click="handleLogout" class="loginButton">Log Out</button>
+    <div v-if="UID > -1">
+      <button @click="handleLogout" class="logoutButton">Log Out</button>
     </div>
   </div>
 </div>
@@ -73,6 +73,7 @@ export default {
       axios.post(process.env.VUE_APP_AXIOS + 'title', params)
         .then(() => {
           this.$store.dispatch('updateTitle', this.titleNew);
+          document.title = this.titleNew + ' | Frenzy';
           this.showF = true;
         })
       this.editF = false;
@@ -99,6 +100,7 @@ export default {
       this.$store.dispatch('updateUID', -1);
       this.$store.dispatch('updatePID', -1);
       this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
+      document.title = 'Plan Your Next Frenzy | Frenzy';
       this.$store.dispatch('updateItemA', []);
     },
   },
@@ -135,33 +137,49 @@ export default {
   text-align: center;
   border-bottom: 2px solid var(--baseTableBorder);
   margin-bottom: 10px;
-  height: 40px;
+  height: 42px;
+  line-height: 42px;
+  vertical-align: middle;
   display: flex;
 }
 
 .titleBar h1 {
   font-size: 1.4em;
   padding: 0;
-  margin-top: 12px;
+  margin: 0;
 }
 
 .titleBar button {
-  padding: 4px 12px;
-  border: none;
-  border-radius: 5px;
-  margin-top: 7px;
+  padding: 4px 10px;
   margin-left: 6px;
   font-weight: 600;
-  font-size: 0.7em;
 }
 
-.titleBar .loginButton {
-  color: var(--buttonLoginFG);
+.buttonPlanAction {
+  background-color: var(--buttonPlanActionBG);
+  color: var(--buttonPlanActionFG);
+  border: 2px solid var(--buttonPlanActionBO);
+  border-radius: 5px;
+}
+
+.loginButton {
   background-color: var(--buttonLoginBG);
+  color: var(--buttonLoginFG);
+  border: 2px solid var(--buttonLoginBO);
+  border-radius: 5px;
 }
 
-.titleBar .signupButton {
+.signupButton {
   color: var(--buttonSignupFG);
   background-color: var(--buttonSignupBG);
+  border: 2px solid var(--buttonSignupBO);
+  border-radius: 5px;
+}
+
+.logoutButton {
+  background-color: var(--buttonLogoutBG);
+  color: var(--buttonLogoutFG);
+  border: 2px solid var(--buttonLogoutBO);
+  border-radius: 5px;
 }
 </style>

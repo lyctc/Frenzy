@@ -78,7 +78,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	ts := time.Now()
-	_, err = db.Query(
+	_, err = db.Exec(
 		"INSERT INTO users (email, password, ts) VALUES ($1, $2, $3)", email, string(hashed), ts,
 	)
 	if err != nil {
@@ -89,7 +89,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	err = result.Scan(&uid, &passwordS)
 
 	ts = time.Now()
-	_, err = db.Query(
+	_, err = db.Exec(
 		"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", uid, "Blank Title", "[]", ts,
 	)
 	if err != nil {
@@ -172,7 +172,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	err = result.Scan(&PID, &Title, &ItemA)
 	if err != nil {
 		ts := time.Now()
-		_, err = db.Query(
+		_, err = db.Exec(
 			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
 		)
 		if err != nil {
@@ -221,7 +221,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		ts := time.Now()
-		_, err = db.Query(
+		_, err = db.Exec(
 			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
 		)
 		if err != nil {
@@ -258,7 +258,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ts := time.Now()
-	_, err = db.Query(
+	_, err = db.Exec(
 		"UPDATE plans SET itemA=$1, ts=$2 WHERE uid=$3 and pid=$4", itemA, ts, uid, pid,
 	)
 	if err != nil {
@@ -279,7 +279,7 @@ func titleHandler(w http.ResponseWriter, r *http.Request) {
 	UID := jwtValidate(TokenString)
 
 	ts := time.Now()
-	_, err = db.Query(
+	_, err = db.Exec(
 		"UPDATE plans SET title=$1, ts=$2 WHERE uid=$3 and pid=$4", Title, ts, UID, PID,
 	)
 	if err != nil {

@@ -1,23 +1,19 @@
 <template>
 <div class="signupBG">
   <div class="signupFG">
-    <div class="form-title">
-      Sign Up
-    </div>
+    <div class="form-title">Sign Up</div>
     <form @submit="handleSubmit" method="post">
-      <div v-if="error != ''">
-        <b>{{error}}</b><br />
-      </div>
+      <div v-if="error != ''"><b>{{error}}</b></div>
       <div class="form-label">
         <p>Email</p>
-        <input type="text" v-model="email" placeholder="Email">
+        <input class="form-input" type="text" v-model="email" placeholder="Email" autofocus>
       </div>
       <div class="form-label">
         <p>Password</p>
-        <input type="password" v-model="password" placeholder="Password">
+        <input class="form-input" type="password" v-model="password" placeholder="Password">
       </div>
       <div class="form-label">
-        <input type="submit" value="Submit" />
+        <input class="form-button" type="submit" value="Submit" />
       </div>
     </form>
   </div>
@@ -62,6 +58,7 @@ export default {
           this.$store.dispatch('updateUID', response.data.UID)
           this.$store.dispatch('updatePID', response.data.PID)
           this.$store.dispatch('updateTitle', response.data.Title)
+          document.title = response.data.Title + ' | Frenzy';
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
           this.$store.dispatch('updatePosA', [0])
         })
@@ -76,21 +73,21 @@ export default {
 </script>
 
 <style scoped>
-
 .form-title {
   margin-top: 10px;
   text-align: center;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 1.2em;
 }
 
 .form-label {
-  margin: 10px 0px 15px 0px;
+  margin: 12px 0px 15px 0px;
 }
 
 .form-label p {
   font-weight: 600;
-  margin: 0px 0px 5px 0px;
+  margin: 0px 0px 7px 0px;
+  font-size: 1.0em;
 }
 
 .signupBG {
@@ -106,10 +103,4 @@ export default {
   text-align: left;
   width: 250px;
 }
-
-.signupFG input {
-  z-index: 500;
-  width: 100%;
-}
-
 </style>

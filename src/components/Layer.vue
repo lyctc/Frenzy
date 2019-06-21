@@ -15,7 +15,7 @@
       >
         <div v-if="!(mode === 'edit' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString())" class="itemTitle">
           {{item.title}}
-          <div v-if="item.childA.length !== 0" style="position:absolute; display: inline-block; left: 210px; color: #999; font-weight: 600;">
+          <div v-if="item.childA.length !== 0" class="itemChildren">
             {{item.childA.length}}
           </div>
         </div>
@@ -124,6 +124,14 @@ export default {
   padding-left: 7px;
 }
 
+.itemChildren {
+  position: absolute;
+  display: inline-block;
+  left: 260px;
+  color: var(--itemChildren);
+  font-weight: 600;
+}
+
 .itemSelected {
   color: var(--itemSelectedFG);
   background-color: var(--itemSelectedBG);
@@ -168,7 +176,7 @@ input {
   color: var(--modeUnselectedFG);
   background-color: var(--modeUnselectedBG);
   line-height: 16px;
-  font-size: 12px;
+  font-size: 1.0em;
 }
 
 .modeSelected {

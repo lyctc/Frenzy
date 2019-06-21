@@ -10,7 +10,7 @@
         v-for="layer in layerA"
         v-bind:key="layer.key"
         v-bind:step="layer.step"
-        style="width: 240px; flex: none;"
+        style="width: 300px; flex: none;"
       />
     </div>
   </div>
@@ -206,7 +206,7 @@ export default {
     },
   },
   mounted() {
-    if (this.$store.state.UID == -1 && window.$cookies.get('TokenString')) {
+    if (window.$cookies.get('TokenString')) {
       // automatically log back in if cookie is set
       this.$store.dispatch('updateTokenString', window.$cookies.get('TokenString'))
       const params = new URLSearchParams();
@@ -216,6 +216,7 @@ export default {
           this.$store.dispatch('updateUID', response.data.UID)
           this.$store.dispatch('updatePID', response.data.PID)
           this.$store.dispatch('updateTitle', response.data.Title)
+          document.title = response.data.Title + ' | Frenzy';
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
           this.$store.dispatch('updatePosA', [0])
           this.pid = response.data.PID;
@@ -224,9 +225,11 @@ export default {
           window.$cookies.set('TokenString', '');
           this.$store.dispatch('updateUID', -1)
         });
-    } else if (this.$store.state.UID == -1) {
+    } else {
+      this.$store.dispatch('updateUID', -1)
       this.$store.dispatch('updateItemA', defaultItemA());
-      this.$store.dispatch('updateTitle', "Plan Your Next Frenzy");
+      this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
+      document.title = 'Plan Your Next Frenzy | Frenzy';
       this.$store.dispatch('updatePosA', [0, 0]);
     }
     window.addEventListener('keyup', e => {
@@ -263,19 +266,80 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
+:root {
+  --baseBG: #FCFCFC;
+  --baseFG: #373737;
+  --baseTableBorder: #9099A2;
+  --layerLeftBorder: #373737;
+  --itemAncestorBG: #EFEFEF;
+  --itemAncestorFG: #000000;
+  --itemSelectedBG: #E1F5FE;
+  --itemSelectedFG: #000000;
+  --itemSelectedButtonBG: #E1F5FE;
+  --itemSelectedButtonFG: #7B7B7B;
+  --itemChildren: #999999;
+  --modeSelectedBG: #FFFDE7;
+  --modeSelectedFG: #000000;
+  --modeUnselectedBG: #EEEEEE;
+  --modeUnselectedFG: #000000;
+  --buttonLoginBG: #E8F5E9;
+  --buttonLoginFG: #373737;
+  --buttonLoginBO: #33691E;
+  --buttonSignupBG: #0277BD;
+  --buttonSignupFG: #FFFFFF;
+  --buttonSignupBO: #01579B;
+  --buttonLogoutBG: #EFEFEF;
+  --buttonLogoutFG: #373737;
+  --buttonLogoutBO: #9099A2;
+  --buttonPlansBG: #EFEFEF;
+  --buttonPlansFG: #373737;
+  --buttonPlansBO: #9099A2;
+  --buttonFormBG: #0277BD;
+  --buttonFormFG: #FFFFFF;
+  --buttonFormBO: #01579B;
+  --buttonPlanActionBG: #EFEFEF;
+  --buttonPlanActionFG: #373737;
+  --buttonPlanActionBO: #9099A2;
+  --plansSelectedBG: #E1F5FE;
+  --plansSelectedFG: #595959;
+  --inputFormAccent: #0277BD;
+}
+
 body {
   background-color: var(--baseBG);
   color: var(--baseFG);
   margin: 0px;
+  padding: 0px;
+}
+
+.form-input {
+  box-sizing: border-box;
+  height: 34px;
+  padding-left: 5px;
+  border: 2px solid var(--baseTableBorder);
+  width: 100%;
+}
+
+.form-input:focus {
+  border: 2px solid var(--inputFormAccent);
+}
+
+.form-button {
+  height: 30px;
+  font-weight: 600;
+  background-color: var(--buttonFormBG);
+  color: var(--buttonFormFG);
+  border: 2px solid var(--buttonFormBO);
+  border-radius: 4px;
+  width: 100%;
 }
 
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 12px;
+  font-size: 1.0em;
   width: 100%;
 }
-
 </style>

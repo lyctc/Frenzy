@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="handleList" style="margin-top: 6px; margin-left: 0px; border: 2px solid #000; background-color: #EEE; color: #000; font-weight: 600; border-radius: 3px; padding: 4px 10px;">Plans &#9662;</button>
+    <button @click="handleList" class="buttonPlans">Plans &#9662;</button>
     <div v-if="this.showF" class="planADiv">
       <div @click="handleAddPlan" class="planOption" style="border-bottom: 2px solid #CCC">
         <p>Add New Plan</p>
@@ -20,7 +20,6 @@ import VueCookies from 'vue-cookies'
 import { mapActions } from 'vuex';
 Vue.use(VueCookies)
 Vue.use(VueAxios, axios)
-
 
 export default {
   name: 'Planlist',
@@ -59,6 +58,7 @@ export default {
         .then(response => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);
+          document.title = response.data.Title + ' | Frenzy';
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA));
           this.$store.dispatch('updatePosA', [0]);
           this.showF = false;
@@ -72,6 +72,7 @@ export default {
         .then(response => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);
+          document.title = response.data.Title + ' | Frenzy';
           this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA));
           this.$store.dispatch('updatePosA', [0]);
           this.showF = false;
@@ -83,14 +84,24 @@ export default {
 </script>
 
 <style scoped>
+.buttonPlans {
+  background-color: var(--buttonPlansBG);
+  border: 2px solid var(--buttonPlansBO);
+  color: var(--buttonPlansFG);
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 4px 10px;
+  outline:none;
+}
+
 .planADiv {
   position: absolute;
   height: 300px;
   width: 240px;
   left: 14px;
-  top: 32px;
+  top: 36px;
   background-color: #FFF;
-  border: 2px solid black;
+  border: 2px solid #888;
   z-index: 500;
 }
 
@@ -110,6 +121,7 @@ export default {
 }
 
 .planOption:hover {
-  background: green;
+  background-color: var(--plansSelectedBG);
+  color: var(--plansSelectedFG);
 }
 </style>

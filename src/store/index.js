@@ -7,10 +7,10 @@ Vue.use(Vuex);
 
 export default new Vuex.Store( {
   state: {
-    UID: -1,
-    PID: -1,
-    PlanA: [],
-    Title: '',
+    UID: null,
+    PID: null,
+    PlanA: null,
+    Title: null,
     Page: '',
     posA: [0], // path of current position
     pathA: [], // path of selected task
