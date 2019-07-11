@@ -35,6 +35,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueCookies from 'vue-cookies'
 import { mapActions } from 'vuex';
+import { defaultItemA, rebalanceItemA } from '../lib.js'
 Vue.use(VueCookies)
 Vue.use(VueAxios, axios)
 
@@ -101,7 +102,8 @@ export default {
       this.$store.dispatch('updatePID', -1);
       this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
       document.title = 'Plan Your Next Frenzy | Frenzy';
-      this.$store.dispatch('updateItemA', []);
+      let r = rebalanceItemA([], [], defaultItemA(), []);
+      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
     },
   },
   computed: {

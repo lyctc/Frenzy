@@ -255,7 +255,8 @@ export default {
           this.$store.dispatch('updatePID', response.data.PID)
           this.$store.dispatch('updateTitle', response.data.Title)
           document.title = response.data.Title + ' | Frenzy';
-          this.$store.dispatch('updateItemA', JSON.parse(response.data.ItemA))
+          let r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), this.$store.state.viewLabelA);
+          this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
           this.$store.dispatch('updatePosA', [0])
           this.pid = response.data.PID;
         })

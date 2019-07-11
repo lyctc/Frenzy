@@ -8,7 +8,7 @@
 
 	CREATE DATABASE frenzydb
 	CREATE TABLE users (uid BIGSERIAL, email TEXT, password BYTEA, ts TIMESTAMP, primary key (uid, email, ts));
-	CREATE TABLE plans (pid BIGSERIAL, uid BIGINT, title TEXT, itemA TEXT, ts TIMESTAMP, primary key (pid, uid, ts));
+	CREATE TABLE plans (pid BIGSERIAL, uid BIGINT, title TEXT, itema TEXT, ts TIMESTAMP, primary key (pid, uid, ts));
 
 	go run server/main.go
 
@@ -56,12 +56,12 @@ func jwtValidate(TokenString string) int {
 }
 
 func signupHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- signupHandler")
 	var (
-		uid       int
-		passwordS string
-		PID       string
-		ItemA     string
-		Title     string
+		UID   int
+		PID   string
+		ItemA string
+		Title string
 	)
 	type RespStruct struct {
 		UID         string
@@ -75,32 +75,20 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
+	Title = "Blank Title"
+	ItemA = "[]"
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	ts := time.Now()
-	_, err = db.Exec(
-		"INSERT INTO users (email, password, ts) VALUES ($1, $2, $3)", email, string(hashed), ts,
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	result := db.QueryRow("SELECT uid, password FROM users WHERE email=$1 ORDER BY ts DESC", email)
-	err = result.Scan(&uid, &passwordS)
-
-	ts = time.Now()
-	_, err = db.Exec(
-		"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", uid, "Blank Title", "[]", ts,
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", uid)
-	err = result.Scan(&PID, &Title, &ItemA)
+	_ = db.QueryRow(
+		"INSERT INTO users (email, password, ts) VALUES ($1, $2, $3) RETURNING uid", email, string(hashed), ts,
+	).Scan(&UID)
+	_ = db.QueryRow(
+		"INSERT INTO plans (uid, title, itema, ts) VALUES ($1, $2, $3, $4) RETURNING pid", UID, Title, ItemA, ts,
+	).Scan(&PID)
 
 	claims := &Claims{
-		UID:            uid,
+		UID:            UID,
 		StandardClaims: jwt.StandardClaims{},
 	}
 
@@ -112,7 +100,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", "application/json")
 	b, err := json.Marshal(RespStruct{
-		UID:         strconv.Itoa(uid),
+		UID:         strconv.Itoa(UID),
 		TokenString: TokenString,
 		PID:         PID,
 		ItemA:       ItemA,
@@ -125,6 +113,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- loginHandler")
 	var (
 		UID       int
 		email     string
@@ -168,17 +157,17 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", claims.UID)
+	result = db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 ORDER BY ts DESC", claims.UID)
 	err = result.Scan(&PID, &Title, &ItemA)
 	if err != nil {
 		ts := time.Now()
 		_, err = db.Exec(
-			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
+			"INSERT INTO plans (uid, title, itema, ts) VALUES ($1, 'Blank Title', '[]', $2)", UID, ts,
 		)
 		if err != nil {
 			panic(err)
 		}
-		result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
+		result = db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
 		err = result.Scan(&PID, &Title, &ItemA)
 	}
 
@@ -197,7 +186,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func refreshHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("-- refresh")
+	fmt.Println("-- refreshHandler")
 	var (
 		UID   int
 		PID   int
@@ -216,18 +205,18 @@ func refreshHandler(w http.ResponseWriter, r *http.Request) {
 	TokenString := r.PostFormValue("TokenString")
 	UID = jwtValidate(TokenString)
 
-	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
+	result := db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
 	err = result.Scan(&PID, &Title, &ItemA)
 
 	if err != nil {
 		ts := time.Now()
 		_, err = db.Exec(
-			"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4)", UID, "Blank Title", "[]", ts,
+			"INSERT INTO plans (uid, title, itema, ts) VALUES ($1, 'Blank Title', '[]', $2)", UID, ts,
 		)
 		if err != nil {
 			panic(err)
 		}
-		result = db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
+		result = db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 ORDER BY ts DESC", UID)
 		err = result.Scan(&PID, &Title, &ItemA)
 	}
 
@@ -245,6 +234,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- saveHandler")
 	// save a plan
 	enableCors(&w)
 	r.ParseForm()
@@ -259,7 +249,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts := time.Now()
 	_, err = db.Exec(
-		"UPDATE plans SET itemA=$1, ts=$2 WHERE uid=$3 and pid=$4", itemA, ts, uid, pid,
+		"UPDATE plans SET itema=$1, ts=$2 WHERE uid=$3 and pid=$4", itemA, ts, uid, pid,
 	)
 	if err != nil {
 		panic(err)
@@ -267,6 +257,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func titleHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- titleHandler")
 	// update title of plan
 	type RespStruct struct {
 		Title string
@@ -298,6 +289,7 @@ func titleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- listHandler")
 	// returns a list of plans
 	enableCors(&w)
 	r.ParseForm()
@@ -342,6 +334,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- addHandler")
 	var (
 		PID   int
 		ItemA string
@@ -360,10 +353,10 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts := time.Now()
 	_ = db.QueryRow(
-		"INSERT INTO plans (uid, title, itemA, ts) VALUES ($1, $2, $3, $4) RETURNING pid", UID, "Blank Title", "[]", ts,
+		"INSERT INTO plans (uid, title, itema, ts) VALUES ($1, 'Blank Title', '[]', $2)", UID, ts,
 	).Scan(&PID)
 
-	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
+	result := db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
 	err = result.Scan(&PID, &Title, &ItemA)
 
 	w.Header().Set("content-type", "application/json")
@@ -379,6 +372,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- deleteHandler")
 	enableCors(&w)
 	r.ParseForm()
 	PID := r.PostFormValue("PID")
@@ -388,6 +382,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-- loadHandler")
 	// load a plan
 	var (
 		Title string
@@ -404,7 +399,7 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	TokenString := r.PostFormValue("TokenString")
 	UID := jwtValidate(TokenString)
 
-	result := db.QueryRow("SELECT pid, title, itemA FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
+	result := db.QueryRow("SELECT pid, title, itema FROM plans WHERE uid=$1 AND pid=$2 ORDER BY ts DESC", UID, PID)
 	err = result.Scan(&PID, &Title, &ItemA)
 
 	w.Header().Set("content-type", "application/json")
