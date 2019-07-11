@@ -30,46 +30,56 @@ import Signup from './components/Signup.vue'
 import Login from './components/Login.vue'
 import TitleBar from './components/TitleBar.vue'
 import { mapActions } from 'vuex';
-import { rebalancePathA, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
+import { rebalancePathA, labelItemHelper, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
 
-function normalShortcuts(keyCode, posA, itemA, dispatch) {
+function normalShortcuts(e, posA, itemA, dispatch) {
   let i;
   let posA0 = Array.from(posA);
+  let itemA0 = Array.from(itemA);
   let itemAN = Array.from(itemA); // last layer
   for (i = 0; i < posA.length - 1; i += 1) {
     itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
   }
 
-  if (keyCode === 38) { // up
+  if (e.keyCode === 38) { // up
     if (posA0[posA0.length - 1] > 0) {
       posA0[posA0.length - 1] -= 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 40) { // down
+  } else if (e.keyCode === 40) { // down
     if (posA0[posA0.length - 1] < itemAN.length) {
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 37) { // left
+  } else if (e.keyCode === 37) { // left
     if (posA0.length > 1) {
       posA0.pop();
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 39) { // right
+  } else if (e.keyCode === 39) { // right
     if (itemAN.length > 0 && posA0[posA0.length - 1] < itemAN.length) {
       posA0.push(0);
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 13) {
+  } else if (e.keyCode === 13) {
     if (posA0[posA0.length - 1] < itemAN.length) {
       dispatch('updateMode', {mode: 'selected', modesub: 'move'});
     } else if (posA0[posA0.length - 1] === itemAN.length) {
       dispatch('updateMode', {mode: 'add', modesub: ''});
     }
+  } else if (e.keyCode === 49 && e.shiftKey) { // Shift-1
+    itemA0 = labelItemHelper(1, itemA0, posA0, 0);
+    dispatch('updateItemA', itemA0)
+  } else if (e.keyCode === 50 && e.shiftKey) { // Shift-2
+    itemA0 = labelItemHelper(2, itemA0, posA0, 0);
+    dispatch('updateItemA', itemA0)
+  } else if (e.keyCode === 51 && e.shiftKey) { // Shift-3
+    itemA0 = labelItemHelper(3, itemA0, posA0, 0);
+    dispatch('updateItemA', itemA0)
   }
 }
 
-function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
+function selectedShortcuts(e, posA, itemA, modesub, dispatch) {
   let i;
   let _;
   let posA0 = Array.from(posA);
@@ -78,19 +88,19 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
   for (i = 0; i < posA.length - 1; i += 1) {
     itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
   }
-  if (keyCode === 38) { // up
+  if (e.keyCode === 38) { // up
     dispatch('updateMode', {mode: 'normal', modesub: ''});
     if (posA[posA.length - 1] > 0) {
       posA0[posA0.length - 1] -= 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 40) { // down
+  } else if (e.keyCode === 40) { // down
     dispatch('updateMode', {mode: 'normal', modesub: ''});
     if (posA[posA.length - 1] < itemAN.length) {
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 37) {
+  } else if (e.keyCode === 37) {
     if (modesub === 'move') {
       // pass
     } else if (modesub === 'edit') {
@@ -98,7 +108,7 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
     } else if (modesub === 'delete') {
       dispatch('updateMode', {mode: 'selected', modesub: 'edit'});
     }
-  } else if (keyCode === 39) {
+  } else if (e.keyCode === 39) {
     if (modesub === 'move') {
       dispatch('updateMode', {mode: 'selected', modesub: 'edit'});
     } else if (modesub === 'edit') {
@@ -106,7 +116,7 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
     } else if (modesub === 'delete') {
       // pass
     }
-  } else if (keyCode === 13) {
+  } else if (e.keyCode === 13) {
     if (modesub === 'move') {
       dispatch('updateMode', {mode: 'move', modesub: ''});
     } else if (modesub === 'edit') {
@@ -119,7 +129,7 @@ function selectedShortcuts(keyCode, posA, itemA, modesub, dispatch) {
   }
 }
 
-function moveShortcuts(keyCode, posA, itemA, dispatch) {
+function moveShortcuts(e, posA, itemA, dispatch) {
   let i;
   let _;
   let posA0 = Array.from(posA);
@@ -128,7 +138,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
   for (i = 0; i < posA.length - 1; i += 1) {
     itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
   }
-  if (keyCode === 38) {
+  if (e.keyCode === 38) {
     if (posA0[posA0.length - 1] > 0) {
       itemA0 = moveItemHelper('up', itemA0, posA0, 0);
       _, itemA0 = rebalancePathA([], itemA0);
@@ -136,7 +146,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
       posA0[posA0.length - 1] -= 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 40) {
+  } else if (e.keyCode === 40) {
     if (posA0[posA0.length - 1] < itemAN.length - 1) {
       itemA0 = moveItemHelper('down', itemA0, posA0, 0);
       _, itemA0 = rebalancePathA([], itemA0);
@@ -144,7 +154,7 @@ function moveShortcuts(keyCode, posA, itemA, dispatch) {
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
     }
-  } else if (keyCode === 13) {
+  } else if (e.keyCode === 13) {
     dispatch('updateMode', {mode: 'normal', modesub: ''});
   }
 }
@@ -239,14 +249,14 @@ export default {
         }
         if (this.$store.state.mode === 'normal') {
           normalShortcuts(
-            e.keyCode,
+            e,
             this.$store.state.posA,
             this.$store.state.itemA,
             this.$store.dispatch,
           )
         } else if (this.$store.state.mode === 'selected') {
           selectedShortcuts(
-            e.keyCode,
+            e,
             this.$store.state.posA,
             this.$store.state.itemA,
             this.$store.state.modesub,
@@ -254,7 +264,7 @@ export default {
           )
         } else if (this.$store.state.mode === 'move') {
           moveShortcuts(
-            e.keyCode,
+            e,
             this.$store.state.posA,
             this.$store.state.itemA,
             this.$store.dispatch
@@ -276,6 +286,8 @@ export default {
   --itemAncestorFG: #000000;
   --itemSelectedBG: #E1F5FE;
   --itemSelectedFG: #000000;
+  --itemMoveBG: #D0E4ED;
+  --itemMoveFG: #000000;
   --itemSelectedButtonBG: #E1F5FE;
   --itemSelectedButtonFG: #7B7B7B;
   --itemChildren: #999999;

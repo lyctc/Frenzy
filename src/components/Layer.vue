@@ -10,6 +10,7 @@
         :class="{
           'itemAncestor': posA.join(',').startsWith(item.pathA.join(',')) && posA.join(',') !== item.pathA.join(','),
           'itemSelected': posA.join(',') === item.pathA.join(','),
+          'itemMove': posA.join(',') === item.pathA.join(',') && mode === 'move',
           'itemExpand': posA.join(',').startsWith(item.pathA.join(',')) && !(posA.join(',') === item.pathA.join(',') && item.childA.length === 0)
         }"
       >
@@ -27,6 +28,11 @@
         <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'move' }">Move</div>
         <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'edit' }">Edit</div>
         <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'delete' }">Delete</div>
+      </div>
+      <div style="display: flex;width: 95%;">
+        <div class="itemLabel" :class="{'itemLabel1': item.labelA.indexOf(1) !== -1 }"></div>
+        <div class="itemLabel" :class="{'itemLabel2': item.labelA.indexOf(2) !== -1 }"></div>
+        <div class="itemLabel" :class="{'itemLabel3': item.labelA.indexOf(3) !== -1 }"></div>
       </div>
     </div>
 
@@ -137,6 +143,11 @@ export default {
   background-color: var(--itemSelectedBG);
 }
 
+.itemMove {
+  color: var(--itemMoveFG);
+  background-color: var(--itemMoveBG);
+}
+
 .itemAncestor {
   color: var(--itemAncestorFG);
   background-color: var(--itemAncestorBG);
@@ -148,6 +159,23 @@ export default {
   font-size: 0.8em;
   color: var(--itemSelectedButtonFG);
   background-color: var(--itemSelectedButtonBG);
+}
+
+.itemLabel {
+  width: 33.3333%;
+  height: 3px;
+}
+
+.itemLabel1 {
+  background-color: red;
+}
+
+.itemLabel2 {
+  background-color: green;
+}
+
+.itemLabel3 {
+  background-color: blue;
 }
 
 .itemExpand {

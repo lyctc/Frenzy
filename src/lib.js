@@ -3,75 +3,88 @@ function defaultItemA () {
     {
       pathA: [0],
       title: 'Navigate with arrow keys',
-      labelA: [],
+      labelA: [1],
       childA: [
         {
           pathA: [0, 0],
           title: 'Up/down to move within layers',
-          labelA: [],
+          labelA: [1],
           childA: [],
         },
         {
           pathA: [0, 1],
           title: 'Left/right to move between layers',
-          labelA: [],
+          labelA: [1],
           childA: [],
         },
         {
           pathA: [0, 2],
-          title: 'Press enter, then left/right to edit',
-          labelA: [],
+          title: 'Enter, then left/right to edit',
+          labelA: [1],
           childA: [],
         },
         {
           pathA: [0, 3],
-          title: 'Press escape to cancel',
-          labelA: [],
+          title: 'Escape to cancel',
+          labelA: [1],
           childA: [],
         },
       ],
     },
     {
       pathA: [1],
-      title: 'Filter by custom tags',
-      labelA: [],
+      title: 'Filter by labels',
+      labelA: [2],
       childA: [
         {
           pathA: [1, 0],
-          title: 'Press 1 to highlight the new features',
-          labelA: [],
+          title: 'Shift-1 to add label 1',
+          labelA: [2],
           childA: [],
         },
         {
           pathA: [1, 1],
-          title: 'Press 1-1 to only show new features',
-          labelA: [],
+          title: '1 to only show label 1',
+          labelA: [2],
           childA: [],
         },
         {
           pathA: [1, 2],
-          title: 'Press 1-1-1 to cancel',
-          labelA: [],
+          title: '1 again to show all items',
+          labelA: [2],
           childA: [],
         },
       ],
     },
     {
       pathA: [2],
-      title: 'Share with access controls',
-      labelA: [],
-      childA: [],
+      title: 'Group by labels',
+      labelA: [2],
+      childA: [
+        {
+          pathA: [2, 0],
+          title: 'G to group by labels',
+          labelA: [2],
+          childA: [],
+        },
+        {
+          pathA: [2, 1],
+          title: 'G again to show structure',
+          labelA: [2],
+          childA: [],
+        },
+      ]
     },
     {
       pathA: [3],
       title: 'Plan multiple frenzies',
-      labelA: [],
+      labelA: [3],
       childA: [],
     },
     {
       pathA: [4],
       title: 'Get started for free',
-      labelA: [],
+      labelA: [3],
       childA: [],
     },
   ];
@@ -83,6 +96,21 @@ function rebalancePathA(path, itemA0) {
   for (i = 0; i < itemA0.length; i += 1) {
     itemA0[i].pathA = path.concat([i]);
     itemA0[i].childA = rebalancePathA(path.concat([i]), itemA0[i].childA)
+  }
+  return itemA0;
+}
+
+function labelItemHelper(label, itemA0, posA0, step) {
+  // recursively goes to item and toggles label
+  if (step === posA0.length - 1) {
+    if (itemA0[posA0[step]].labelA.indexOf(label) === -1) {
+      itemA0[posA0[step]].labelA.push(label);
+    } else {
+      itemA0[posA0[step]].labelA = itemA0[posA0[step]].labelA.filter(l => l !== label);
+    }
+    return itemA0;
+  } else {
+    itemA0[posA0[step]].childA = labelItemHelper(label, itemA0[posA0[step]].childA, posA0, step + 1);
   }
   return itemA0;
 }
@@ -159,6 +187,9 @@ module.exports = {
   },
   rebalancePathA: function (path, itemA0) {
     return rebalancePathA(path, itemA0);
+  },
+  labelItemHelper: function (label, itemA0, posA0, step) {
+    return labelItemHelper(label, itemA0, posA0, step);
   },
   moveItemHelper: function (dir, itemA0, posA0, step) {
     return moveItemHelper(dir, itemA0, posA0, step);
