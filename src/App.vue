@@ -10,6 +10,7 @@
         v-for="layer in layerA"
         v-bind:key="layer.key"
         v-bind:step="layer.step"
+        v-bind:parentPathItemA="layer.parentPathItemA"
         style="width: 300px; flex: none;"
       />
     </div>
@@ -30,15 +31,16 @@ import Signup from './components/Signup.vue'
 import Login from './components/Login.vue'
 import TitleBar from './components/TitleBar.vue'
 import { mapActions } from 'vuex';
-import { rebalancePathA, labelItemHelper, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
+import { rebalanceItemA, viewLabelHelper, labelItemHelper, moveItemHelper, deleteItemHelper, defaultItemA } from './lib.js'
 
-function normalShortcuts(e, posA, itemA, dispatch) {
+function normalShortcuts(e, posA, itemA, dispA, viewLabelA, dispatch) {
   let i;
+  let r;
   let posA0 = Array.from(posA);
   let itemA0 = Array.from(itemA);
-  let itemAN = Array.from(itemA); // last layer
+  let dispAN = Array.from(dispA); // last layer
   for (i = 0; i < posA.length - 1; i += 1) {
-    itemAN = (itemAN !== []) ? itemAN[posA[i]].childA : [];
+    dispAN = (dispAN !== []) ? dispAN[posA[i]].childA : [];
   }
 
   if (e.keyCode === 38) { // up
@@ -47,7 +49,7 @@ function normalShortcuts(e, posA, itemA, dispatch) {
       dispatch('updatePosA', posA0);
     }
   } else if (e.keyCode === 40) { // down
-    if (posA0[posA0.length - 1] < itemAN.length) {
+    if (posA0[posA0.length - 1] < dispAN.length) {
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
     }
@@ -57,31 +59,48 @@ function normalShortcuts(e, posA, itemA, dispatch) {
       dispatch('updatePosA', posA0);
     }
   } else if (e.keyCode === 39) { // right
-    if (itemAN.length > 0 && posA0[posA0.length - 1] < itemAN.length) {
+    if (dispAN.length > 0 && posA0[posA0.length - 1] < dispAN.length) {
       posA0.push(0);
       dispatch('updatePosA', posA0);
     }
   } else if (e.keyCode === 13) {
-    if (posA0[posA0.length - 1] < itemAN.length) {
+    if (posA0[posA0.length - 1] < dispAN.length) {
       dispatch('updateMode', {mode: 'selected', modesub: 'move'});
-    } else if (posA0[posA0.length - 1] === itemAN.length) {
+    } else if (posA0[posA0.length - 1] === dispAN.length) {
       dispatch('updateMode', {mode: 'add', modesub: ''});
     }
   } else if (e.keyCode === 49 && e.shiftKey) { // Shift-1
     itemA0 = labelItemHelper(1, itemA0, posA0, 0);
-    dispatch('updateItemA', itemA0)
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
   } else if (e.keyCode === 50 && e.shiftKey) { // Shift-2
     itemA0 = labelItemHelper(2, itemA0, posA0, 0);
-    dispatch('updateItemA', itemA0)
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
   } else if (e.keyCode === 51 && e.shiftKey) { // Shift-3
     itemA0 = labelItemHelper(3, itemA0, posA0, 0);
-    dispatch('updateItemA', itemA0)
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+  } else if (e.keyCode === 49 && !e.shiftKey) { // 1
+    viewLabelA = viewLabelHelper(viewLabelA, 1);
+    dispatch('updateViewLabelA', viewLabelA);
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA});
+  } else if (e.keyCode === 50 && !e.shiftKey) { // 2
+    viewLabelA = viewLabelHelper(viewLabelA, 2)
+    dispatch('updateViewLabelA', viewLabelA);
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA});
+  } else if (e.keyCode === 51 && !e.shiftKey) { // 3
+    viewLabelA = viewLabelHelper(viewLabelA, 3)
+    dispatch('updateViewLabelA', viewLabelA);
+    r = rebalanceItemA([], [], itemA0, viewLabelA);
+    dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA});
   }
 }
 
-function selectedShortcuts(e, posA, itemA, modesub, dispatch) {
+function selectedShortcuts(e, posA, itemA, modesub, viewLabelA, dispatch) {
   let i;
-  let _;
   let posA0 = Array.from(posA);
   let itemA0 = Array.from(itemA);
   let itemAN = Array.from(itemA); // last layer
@@ -118,20 +137,23 @@ function selectedShortcuts(e, posA, itemA, modesub, dispatch) {
     }
   } else if (e.keyCode === 13) {
     if (modesub === 'move') {
+      viewLabelA = []
+      dispatch('updateViewLabelA', viewLabelA);
+      let r = rebalanceItemA([], [], itemA0, viewLabelA);
+      dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA});
       dispatch('updateMode', {mode: 'move', modesub: ''});
     } else if (modesub === 'edit') {
       dispatch('updateMode', {mode: 'edit', modesub: ''});
     } else if (modesub === 'delete') {
       itemA0 = deleteItemHelper(itemA0, posA, 0);
-      _, itemA0 = rebalancePathA([], itemA0);
-      dispatch('updateItemA', itemA0)
+      let r = rebalanceItemA([], [], itemA0, viewLabelA);
+      dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
     }
   }
 }
 
-function moveShortcuts(e, posA, itemA, dispatch) {
+function moveShortcuts(e, posA, itemA, viewLabelA, dispatch) {
   let i;
-  let _;
   let posA0 = Array.from(posA);
   let itemA0 = Array.from(itemA);
   let itemAN = Array.from(itemA); // last layer
@@ -141,16 +163,16 @@ function moveShortcuts(e, posA, itemA, dispatch) {
   if (e.keyCode === 38) {
     if (posA0[posA0.length - 1] > 0) {
       itemA0 = moveItemHelper('up', itemA0, posA0, 0);
-      _, itemA0 = rebalancePathA([], itemA0);
-      dispatch('updateItemA', itemA0)
+      let r = rebalanceItemA([], [], itemA0, viewLabelA);
+      dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
       posA0[posA0.length - 1] -= 1;
       dispatch('updatePosA', posA0);
     }
   } else if (e.keyCode === 40) {
     if (posA0[posA0.length - 1] < itemAN.length - 1) {
       itemA0 = moveItemHelper('down', itemA0, posA0, 0);
-      _, itemA0 = rebalancePathA([], itemA0);
-      dispatch('updateItemA', itemA0)
+      let r = rebalanceItemA([], [], itemA0, viewLabelA);
+      dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
       posA0[posA0.length - 1] += 1;
       dispatch('updatePosA', posA0);
     }
@@ -175,6 +197,7 @@ export default {
       'updateTokenString',
       'updateMode',
       'updatePosA',
+      'updateViewLabelA',
       'updateTitle',
     ]),
   },
@@ -182,16 +205,18 @@ export default {
     layerA() {
       let i;
       let layerA = [];
-      let itemAN = Array.from(this.$store.state.itemA);
+      let dispAN = Array.from(this.$store.state.dispA);
+      let parentPathItemA = [];
       for (i = 0; i < this.$store.state.posA.length; i += 1) {
-        layerA.push({key: `layer${i}`, step: i});
-        if (itemAN.length > 0 && this.$store.state.posA[i] < itemAN.length) {
-          itemAN = itemAN[this.$store.state.posA[i]].childA;
+        layerA.push({key: `layer${i}`, step: i, parentPathItemA});
+        if (dispAN.length > 0 && this.$store.state.posA[i] < dispAN.length) {
+          parentPathItemA = dispAN[this.$store.state.posA[i]].pathItemA;
+          dispAN = dispAN[this.$store.state.posA[i]].childA;
         } else { // hit add new item
-          itemAN = [];
+          dispAN = [];
         }
       }
-      if (itemAN.length > 0) { // preview
+      if (dispAN.length > 0) { // preview
         layerA.push({
           key: `layer${this.$store.state.posA.length}`,
           step: this.$store.state.posA.length
@@ -204,6 +229,9 @@ export default {
     },
     posA() {
       return this.$store.state.posA;
+    },
+    viewLabelA() {
+      return this.$store.state.viewLabelA;
     },
     Page() {
       return this.$store.state.Page;
@@ -237,7 +265,8 @@ export default {
         });
     } else {
       this.$store.dispatch('updateUID', -1)
-      this.$store.dispatch('updateItemA', defaultItemA());
+      let r = rebalanceItemA([], [], defaultItemA(), this.$store.state.viewLabelA);
+      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
       this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
       document.title = 'Plan Your Next Frenzy | Frenzy';
       this.$store.dispatch('updatePosA', [0, 0]);
@@ -252,6 +281,8 @@ export default {
             e,
             this.$store.state.posA,
             this.$store.state.itemA,
+            this.$store.state.dispA,
+            this.$store.state.viewLabelA,
             this.$store.dispatch,
           )
         } else if (this.$store.state.mode === 'selected') {
@@ -260,6 +291,7 @@ export default {
             this.$store.state.posA,
             this.$store.state.itemA,
             this.$store.state.modesub,
+            this.$store.state.viewLabelA,
             this.$store.dispatch,
           )
         } else if (this.$store.state.mode === 'move') {
@@ -267,8 +299,11 @@ export default {
             e,
             this.$store.state.posA,
             this.$store.state.itemA,
+            this.$store.state.viewLabelA,
             this.$store.dispatch
           );
+        } else if (['add', 'edit'].indexOf(this.$store.state.mode) !== -1 && e.keyCode === 13) {
+          this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
         }
       }
     });
@@ -282,15 +317,15 @@ export default {
   --baseFG: #373737;
   --baseTableBorder: #9099A2;
   --layerLeftBorder: #373737;
-  --itemAncestorBG: #EFEFEF;
-  --itemAncestorFG: #000000;
-  --itemSelectedBG: #E1F5FE;
-  --itemSelectedFG: #000000;
-  --itemMoveBG: #D0E4ED;
-  --itemMoveFG: #000000;
-  --itemSelectedButtonBG: #E1F5FE;
-  --itemSelectedButtonFG: #7B7B7B;
-  --itemChildren: #999999;
+  --dispAncestorBG: #EFEFEF;
+  --dispAncestorFG: #000000;
+  --dispSelectedBG: #E1F5FE;
+  --dispSelectedFG: #000000;
+  --dispMoveBG: #D0E4ED;
+  --dispMoveFG: #000000;
+  --dispSelectedButtonBG: #E1F5FE;
+  --dispSelectedButtonFG: #7B7B7B;
+  --dispChildren: #999999;
   --modeSelectedBG: #FFFDE7;
   --modeSelectedFG: #000000;
   --modeUnselectedBG: #EEEEEE;

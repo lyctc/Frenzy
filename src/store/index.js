@@ -13,12 +13,14 @@ export default new Vuex.Store( {
     Title: null,
     Page: '',
     posA: [0], // path of current position
-    pathA: [], // path of selected task
+    pathItemA: [], // path of selected task
     mode: 'normal', // 'normal', 'selected', 'move', 'edit', 'add'
     modesub: '',
     addButtonVisible: false,
     addInputVisible: false,
     itemA: [],
+    dispA: [],
+    viewLabelA: [],
   },
   actions, 
   mutations,

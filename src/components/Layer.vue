@@ -1,46 +1,18 @@
 <template>
 <div>
- <div class="layerLeftBorder">
-    <div v-for="item in itemAN"
-      v-bind:key="item.pathA.toString()"
+  <div class="layerLeftBorder">
+    <Item
+      v-for="disp in dispAN"
+      v-bind:key="disp.pathDispA.toString()"
+      v-bind:disp="disp"
       style="margin: 0px 0px 10px 0px; position: relative;"
-    >
-      <div
-        class="item"
-        :class="{
-          'itemAncestor': posA.join(',').startsWith(item.pathA.join(',')) && posA.join(',') !== item.pathA.join(','),
-          'itemSelected': posA.join(',') === item.pathA.join(','),
-          'itemMove': posA.join(',') === item.pathA.join(',') && mode === 'move',
-          'itemExpand': posA.join(',').startsWith(item.pathA.join(',')) && !(posA.join(',') === item.pathA.join(',') && item.childA.length === 0)
-        }"
-      >
-        <div v-if="!(mode === 'edit' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString())" class="itemTitle">
-          {{item.title}}
-          <div v-if="item.childA.length !== 0" class="itemChildren">
-            {{item.childA.length}}
-          </div>
-        </div>
-        <div v-if="mode === 'edit' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString()">
-          <input v-select type="text" :value="item.title" @keyup.enter="updateItem" />
-        </div>
-      </div>
-      <div v-if="mode === 'selected' && posA.join(',').startsWith(item.pathA.join(',')) && item.pathA.toString() === posA.toString()" class="modesubBar">
-        <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'move' }">Move</div>
-        <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'edit' }">Edit</div>
-        <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'delete' }">Delete</div>
-      </div>
-      <div style="display: flex;width: 95%;">
-        <div class="itemLabel" :class="{'itemLabel1': item.labelA.indexOf(1) !== -1 }"></div>
-        <div class="itemLabel" :class="{'itemLabel2': item.labelA.indexOf(2) !== -1 }"></div>
-        <div class="itemLabel" :class="{'itemLabel3': item.labelA.indexOf(3) !== -1 }"></div>
-      </div>
-    </div>
+    />
 
-    <div class="item itemSelectedButton" v-if="mode === 'normal' && posA[step] === itemAN.length">
+    <div class="disp dispSelectedButton" v-if="mode === 'normal' && posA[step] === dispAN.length">
       ADD ITEM
     </div>
 
-    <div class="item" v-if="mode === 'add' && posA[step] === itemAN.length">
+    <div class="disp" v-if="mode === 'add' && posA[step] === dispAN.length">
       <input v-select type="text" @keyup.enter="addItem" />
     </div>
 
@@ -50,12 +22,15 @@
 
 <script>
 import { mapActions } from 'vuex';
-import { rebalancePathA, addItemHelper, updateItemHelper } from '../lib.js'
+import { rebalanceItemA, addItemHelper } from '../lib.js'
+import Item from './Item.vue'
 
 export default {
   name: 'Layer',
-  props: ['step'],
-  components: {},
+  props: ['step', 'parentPathItemA'],
+  components: {
+    Item,
+  },
   directives: {
     select: {
       inserted: function (el) {
@@ -65,24 +40,14 @@ export default {
   },
   methods: {
     ...mapActions([
-      'updateMode',
-      'updatePosA',
+      'updateItemA',
     ]),
     addItem (e) {
-      let _;
-      let itemA0 = Array.from(this.$store.state.itemA);
-      itemA0 = addItemHelper(e.target.value, itemA0, this.$store.state.posA, 0);
-      this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
-      _, itemA0 = rebalancePathA([], itemA0);
-      this.$store.dispatch('updateItemA', itemA0)
-    },
-    updateItem (e) {
-      let _;
-      let itemA0 = Array.from(this.$store.state.itemA);
-      itemA0 = updateItemHelper(e.target.value, itemA0, this.$store.state.posA, 0);
-      this.$store.dispatch('updateMode', {mode: 'normal', modesub: ''});
-      _, itemA0 = rebalancePathA([], itemA0);
-      this.$store.dispatch('updateItemA', itemA0)
+      let r;
+      let itemA0 = addItemHelper(e.target.value, this.$store.state.itemA, this.$store.state.viewLabelA, this.$props.parentPathItemA, 0);
+      r = rebalanceItemA([], [], itemA0, this.$store.state.viewLabelA);
+      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+      // mode is automatically updated to 'normal' in the window listener
     },
   },
   computed: {
@@ -92,17 +57,20 @@ export default {
     modesub() {
       return this.$store.state.modesub;
     },
-    itemAN() {
+    viewLabelA() {
+      return this.$store.state.viewLabelA;
+    },
+    dispAN() {
       let i;
-      let itemAN = Array.from(this.$store.state.itemA);
+      let dispAN = Array.from(this.$store.state.dispA);
       for (i = 0; i < this.$props.step; i += 1) {
-        if (itemAN.length > 0 && this.$store.state.posA[i] < itemAN.length) {
-          itemAN = itemAN[this.$store.state.posA[i]].childA;
-        } else { // hit add new item
-          itemAN = [];
+        if (dispAN.length > 0 && this.$store.state.posA[i] < dispAN.length) {
+          dispAN = dispAN[this.$store.state.posA[i]].childA;
+        } else { // hit add new disp
+          dispAN = [];
         }
       }
-      return itemAN;
+      return dispAN;
     },
     posA() {
       return this.$store.state.posA;
@@ -117,7 +85,12 @@ export default {
   height: 100%;
 }
 
-.item {
+input {
+  margin: 1px 5px;
+  width: 95%;
+}
+
+.disp {
   height: 36px;
   line-height: 36px;
   vertical-align: middle;
@@ -126,89 +99,12 @@ export default {
   border-left: none;
 }
 
-.itemTitle {
-  padding-left: 7px;
-}
-
-.itemChildren {
-  position: absolute;
-  display: inline-block;
-  left: 260px;
-  color: var(--itemChildren);
-  font-weight: 600;
-}
-
-.itemSelected {
-  color: var(--itemSelectedFG);
-  background-color: var(--itemSelectedBG);
-}
-
-.itemMove {
-  color: var(--itemMoveFG);
-  background-color: var(--itemMoveBG);
-}
-
-.itemAncestor {
-  color: var(--itemAncestorFG);
-  background-color: var(--itemAncestorBG);
-}
-
-.itemSelectedButton {
+.dispSelectedButton {
   text-align: center;
   font-weight: 600;
   font-size: 0.8em;
-  color: var(--itemSelectedButtonFG);
-  background-color: var(--itemSelectedButtonBG);
+  color: var(--dispSelectedButtonFG);
+  background-color: var(--dispSelectedButtonBG);
 }
 
-.itemLabel {
-  width: 33.3333%;
-  height: 3px;
-}
-
-.itemLabel1 {
-  background-color: red;
-}
-
-.itemLabel2 {
-  background-color: green;
-}
-
-.itemLabel3 {
-  background-color: blue;
-}
-
-.itemExpand {
-  width: 100%;
-  border-right: none;
-}
-
-input {
-  margin: 1px 5px;
-  width: 95%;
-}
-
-.modesubBar {
-  display: flex;
-  border-right: 1px solid var(--baseTableBorder);
-  border-bottom: 1px solid var(--baseTableBorder);
-  z-index: 100;
-  width: 95%;
-  height: 16px;
-}
-
-.modeUnselected {
-  text-align: center;
-  width: 33.333%;
-  z-index: 100;
-  color: var(--modeUnselectedFG);
-  background-color: var(--modeUnselectedBG);
-  line-height: 16px;
-  font-size: 1.0em;
-}
-
-.modeSelected {
-  color: var(--modeSelectedFG);
-  background-color: var(--modeSelectedBG);
-}
 </style>

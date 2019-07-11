@@ -34,14 +34,18 @@ export const mutations = {
     Vue.set(state, 'posA', posA);
   },
   updateMode(state, {mode, modesub}) {
-    state.mode = mode;
-    state.modesub = modesub;
+    Vue.set(state, 'mode', mode);
+    Vue.set(state, 'modesub', modesub);
+  },
+  updateViewLabelA(state, viewLabelA) {
+    Vue.set(state, 'viewLabelA', viewLabelA);
   },
   updatePlanA(state, PlanA) {
     Vue.set(state, 'PlanA', PlanA);
   },
-  updateItemA(state, itemA) {
+  updateItemA(state, {itemA, dispA}) {
     updateItemADB(state.TokenString, state.UID, state.PID, JSON.stringify(itemA))
     Vue.set(state, 'itemA', itemA);
+    Vue.set(state, 'dispA', dispA);
   },
 };
