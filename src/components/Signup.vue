@@ -21,53 +21,54 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-import { rebalanceItemA } from '../lib.js'
-Vue.use(VueAxios, axios)
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+import { rebalanceItemA } from '../lib';
+
+Vue.use(VueAxios, axios);
 
 export default {
   name: 'Signup',
-  data: function () {
+  data() {
     return {
       email: '',
       password: '',
       error: '',
-    }
+    };
   },
   props: [],
   components: {},
   directives: {
     select: {
-      inserted: function (el) {
-        el.select()
-      }
-    }
+      inserted(el) {
+        el.select();
+      },
+    },
   },
   methods: {
-    handleSubmit: function (event) {
+    handleSubmit(event) {
       event.preventDefault();
       const params = new URLSearchParams();
       params.append('email', this.email);
       params.append('password', this.password);
-      axios.post(process.env.VUE_APP_AXIOS + 'signup', params)
-        .then(response => {
+      axios.post(`${process.env.VUE_APP_AXIOS}signup`, params)
+        .then((response) => {
           window.$cookies.set('TokenString', response.data.TokenString);
-          this.$store.dispatch('updateTokenString', response.data.TokenString)
-          this.$store.dispatch('updatePage', '')
-          this.$store.dispatch('updateUID', response.data.UID)
-          this.$store.dispatch('updatePID', response.data.PID)
-          this.$store.dispatch('updateTitle', response.data.Title)
-          document.title = response.data.Title + ' | Frenzy';
-          let r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
-          this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
-          this.$store.dispatch('updatePosA', [0])
+          this.$store.dispatch('updateTokenString', response.data.TokenString);
+          this.$store.dispatch('updatePage', '');
+          this.$store.dispatch('updateUID', response.data.UID);
+          this.$store.dispatch('updatePID', response.data.PID);
+          this.$store.dispatch('updateTitle', response.data.Title);
+          document.title = `${response.data.Title} | Frenzy`;
+          const r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
+          this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
+          this.$store.dispatch('updatePosA', [0]);
         })
-        .catch(err => {
+        .catch((err) => {
           this.error = err;
         });
-    }
+    },
   },
   computed: {
   },

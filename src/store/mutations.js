@@ -1,7 +1,8 @@
-import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-Vue.use(VueAxios, axios)
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+
+Vue.use(VueAxios, axios);
 
 function updateItemADB(TokenString, uid, pid, itemA) {
   if (uid !== -1) {
@@ -10,11 +11,11 @@ function updateItemADB(TokenString, uid, pid, itemA) {
     params.append('UID', uid);
     params.append('PID', pid);
     params.append('ItemA', itemA);
-    axios.post(process.env.VUE_APP_AXIOS + 'save', params)
+    axios.post(`${process.env.VUE_APP_AXIOS}save`, params);
   }
 }
 
-export const mutations = {
+const mutations = {
   updateTitle(state, Title) {
     Vue.set(state, 'Title', Title);
   },
@@ -33,7 +34,7 @@ export const mutations = {
   updatePosA(state, posA) {
     Vue.set(state, 'posA', posA);
   },
-  updateMode(state, {mode, modesub}) {
+  updateMode(state, { mode, modesub }) {
     Vue.set(state, 'mode', mode);
     Vue.set(state, 'modesub', modesub);
   },
@@ -43,9 +44,11 @@ export const mutations = {
   updatePlanA(state, PlanA) {
     Vue.set(state, 'PlanA', PlanA);
   },
-  updateItemA(state, {itemA, dispA}) {
-    updateItemADB(state.TokenString, state.UID, state.PID, JSON.stringify(itemA))
+  updateItemA(state, { itemA, dispA }) {
+    updateItemADB(state.TokenString, state.UID, state.PID, JSON.stringify(itemA));
     Vue.set(state, 'itemA', itemA);
     Vue.set(state, 'dispA', dispA);
   },
 };
+
+export default mutations;

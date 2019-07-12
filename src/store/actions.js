@@ -29,4 +29,4 @@ export default {
   updateItemA({ commit }, { itemA, dispA }) {
     commit('updateItemA', { itemA, dispA });
   },
-}
+};

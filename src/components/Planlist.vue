@@ -5,7 +5,12 @@
       <div @click="handleAddPlan" class="planOption" style="border-bottom: 2px solid #CCC">
         <p>Add New Plan</p>
       </div>
-      <div v-for="plan in PlanA" v-bind:key="plan.PID" @click="handleSelectPlan(plan.PID)" class="planOption">
+      <div
+        v-for="plan in PlanA"
+        v-bind:key="plan.PID"
+        @click="handleSelectPlan(plan.PID)"
+        class="planOption"
+      >
         <p>{{plan.Title}}</p>
       </div>
     </div>
@@ -13,22 +18,23 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-import VueCookies from 'vue-cookies'
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+import VueCookies from 'vue-cookies';
 import { mapActions } from 'vuex';
-import { rebalanceItemA } from '../lib.js'
-Vue.use(VueCookies)
-Vue.use(VueAxios, axios)
+import { rebalanceItemA } from '../lib';
+
+Vue.use(VueCookies);
+Vue.use(VueAxios, axios);
 
 export default {
   name: 'Planlist',
-  data: function () {
+  data() {
     return {
       showF: false,
       PlanA: [],
-    }
+    };
   },
   props: [],
   components: {},
@@ -39,47 +45,47 @@ export default {
       'updatePID',
       'updateItemA',
     ]),
-    handleList: function () {
+    handleList() {
       if (!this.showF) {
         const params = new URLSearchParams();
         params.append('TokenString', window.$cookies.get('TokenString'));
-        axios.post(process.env.VUE_APP_AXIOS + 'list', params)
-          .then(response => {
+        axios.post(`${process.env.VUE_APP_AXIOS}list`, params)
+          .then((response) => {
             this.PlanA = response.data.PlanA;
             this.showF = true;
-          })
+          });
       } else {
-          this.showF = false;
+        this.showF = false;
       }
     },
-    handleAddPlan: function () {
+    handleAddPlan() {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
-      axios.post(process.env.VUE_APP_AXIOS + 'add', params)
-        .then(response => {
+      axios.post(`${process.env.VUE_APP_AXIOS}add`, params)
+        .then((response) => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);
-          document.title = response.data.Title + ' | Frenzy';
-          let r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
-          this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+          document.title = `${response.data.Title} | Frenzy`;
+          const r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
+          this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
           this.$store.dispatch('updatePosA', [0]);
           this.showF = false;
-        })
+        });
     },
-    handleSelectPlan: function (PID) {
+    handleSelectPlan(PID) {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('PID', PID);
-      axios.post(process.env.VUE_APP_AXIOS + 'load', params)
-        .then(response => {
+      axios.post(`${process.env.VUE_APP_AXIOS}load`, params)
+        .then((response) => {
           this.$store.dispatch('updatePID', response.data.PID);
           this.$store.dispatch('updateTitle', response.data.Title);
-          document.title = response.data.Title + ' | Frenzy';
-          let r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
-          this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+          document.title = `${response.data.Title} | Frenzy`;
+          const r = rebalanceItemA([], [], JSON.parse(response.data.ItemA), []);
+          this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
           this.$store.dispatch('updatePosA', [0]);
           this.showF = false;
-        })
+        });
     },
   },
   computed: {},

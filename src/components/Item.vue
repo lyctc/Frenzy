@@ -3,38 +3,57 @@
   <div
     class="disp"
     :class="{
-      'dispAncestor': posA.join(',').startsWith(disp.pathDispA.join(',')) && posA.join(',') !== disp.pathDispA.join(','),
-      'dispSelected': posA.join(',') === disp.pathDispA.join(','),
-      'dispMove': posA.join(',') === disp.pathDispA.join(',') && mode === 'move',
-      'dispExpand': posA.join(',').startsWith(disp.pathDispA.join(',')) && !(posA.join(',') === disp.pathDispA.join(',') && disp.childA.length === 0)
+      'dispAncestor': dispAncestorF,
+      'dispSelected': dispSelectedF,
+      'dispMove': dispMoveF,
+      'dispExpand': dispExpandF,
     }"
   >
-    <div v-if="!(mode === 'edit' && posA.join(',').startsWith(disp.pathDispA.join(',')) && disp.pathDispA.toString() === posA.toString())" class="dispTitle">
+    <div v-if="
+        !(
+          mode === 'edit'
+          && posA.join(',').startsWith(disp.pathDispA.join(','))
+          && disp.pathDispA.toString() === posA.toString()
+        )
+      "
+      class="dispTitle"
+    >
       {{disp.title}}
       <div v-if="disp.childA.length !== 0" class="dispChildren">
         {{disp.childA.length}}
       </div>
     </div>
-    <div v-if="mode === 'edit' && posA.join(',').startsWith(disp.pathDispA.join(',')) && disp.pathDispA.toString() === posA.toString()">
+    <div v-if="
+        mode === 'edit'
+        && posA.join(',').startsWith(disp.pathDispA.join(','))
+        && disp.pathDispA.toString() === posA.toString()
+      "
+    >
       <input v-select type="text" :value="disp.title" @keyup.enter="updateItem" />
     </div>
-  </div>
-  <div v-if="mode === 'selected' && posA.join(',').startsWith(disp.pathDispA.join(',')) && disp.pathDispA.toString() === posA.toString()" class="modesubBar">
-    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'move' }">Move</div>
-    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'edit' }">Edit</div>
-    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'delete' }">Delete</div>
   </div>
   <div style="display: flex;width: 95%;">
     <div class="dispLabel" :class="{'dispLabel1': disp.labelA.indexOf(1) !== -1 }"></div>
     <div class="dispLabel" :class="{'dispLabel2': disp.labelA.indexOf(2) !== -1 }"></div>
     <div class="dispLabel" :class="{'dispLabel3': disp.labelA.indexOf(3) !== -1 }"></div>
   </div>
+  <div v-if="
+      mode === 'selected'
+      && posA.join(',').startsWith(disp.pathDispA.join(','))
+      && disp.pathDispA.toString() === posA.toString()
+    "
+    class="modesubBar"
+  >
+    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'move' }">Move</div>
+    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'edit' }">Edit</div>
+    <div class="modeUnselected" :class="{ 'modeSelected' : modesub === 'delete' }">Delete</div>
+  </div>
 </div>
 </template>
 
 <script>
 import { mapActions } from 'vuex';
-import { rebalanceItemA, updateItemHelper } from '../lib.js'
+import { rebalanceItemA, updateItemHelper } from '../lib';
 
 export default {
   name: 'Item',
@@ -42,24 +61,48 @@ export default {
   components: {},
   directives: {
     select: {
-      inserted: function (el) {
-        el.select()
-      }
-    }
+      inserted(el) {
+        el.select();
+      },
+    },
   },
   methods: {
     ...mapActions([
       'updatePosA',
     ]),
-    updateItem (e) {
+    updateItem(e) {
       let itemA0 = Array.from(this.$store.state.itemA);
       itemA0 = updateItemHelper(e.target.value, itemA0, this.$props.disp.pathItemA, 0);
-      let r = rebalanceItemA([], [], itemA0, this.$store.state.viewLabelA);
-      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+      const r = rebalanceItemA([], [], itemA0, this.$store.state.viewLabelA);
+      this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
       // mode is automatically updated to 'normal' in the window listener
     },
   },
   computed: {
+    dispAncestorF() { // ancestor of currently selected posA
+      return (
+        this.$store.state.posA.join(',').startsWith(this.$props.disp.pathDispA.join(','))
+        && this.$store.state.posA.join(',') !== this.$props.disp.pathDispA.join(',')
+      );
+    },
+    dispSelectedF() { // currently selected posA
+      return (
+        this.$store.state.posA.join(',') === this.$props.disp.pathDispA.join(',')
+      );
+    },
+    dispMoveF() {
+      return (
+        this.$store.state.posA.join(',') === this.$props.disp.pathDispA.join(',')
+        && this.$store.state.mode === 'move'
+      );
+    },
+    dispExpandF() {
+      return (
+        this.$store.state.posA.join(',').startsWith(this.$props.disp.pathDispA.join(','))
+        && !(this.$store.state.posA.join(',') === this.$props.disp.pathDispA.join(',')
+        && this.$props.disp.childA.length === 0)
+      );
+    },
     mode() {
       return this.$store.state.mode;
     },
@@ -71,7 +114,7 @@ export default {
     },
     posA() {
       return this.$store.state.posA;
-    }
+    },
   },
 };
 </script>

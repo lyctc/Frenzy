@@ -14,7 +14,13 @@
       <h1 @click="handleEditTitle">{{this.$store.state.Title}}</h1>
     </div>
     <div v-if="editF || this.$store.state.Title === ''">
-      <input v-select type="text" v-model="titleNew" v-on:keyup.enter="handleEditTitleSubmit" placeholder="Title" />
+      <input
+        v-select
+        v-model="titleNew"
+        v-on:keyup.enter="handleEditTitleSubmit"
+        type="text"
+        placeholder="Title"
+      />
     </div>
   </div>
   <div style="width: 30%; height: 100%; text-align: right;">
@@ -30,25 +36,26 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-import VueCookies from 'vue-cookies'
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+import VueCookies from 'vue-cookies';
 import { mapActions } from 'vuex';
-import { defaultItemA, rebalanceItemA } from '../lib.js'
-Vue.use(VueCookies)
-Vue.use(VueAxios, axios)
+import { defaultItemA, rebalanceItemA } from '../lib';
 
-import Planlist from './Planlist.vue'
+import Planlist from './Planlist.vue';
+
+Vue.use(VueCookies);
+Vue.use(VueAxios, axios);
 
 export default {
   name: 'TitleView',
-  data: function () {
+  data() {
     return {
       buttonF: false,
       editF: false,
       titleNew: this.$store.state.Title,
-    }
+    };
   },
   components: {
     Planlist,
@@ -63,38 +70,38 @@ export default {
       'updatePosA',
       'updateTitle',
     ]),
-    handleEditTitle: function () {
+    handleEditTitle() {
       this.editF = true;
     },
-    handleEditTitleSubmit: function () {
+    handleEditTitleSubmit() {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('Title', this.titleNew);
       params.append('PID', this.$store.state.PID);
-      axios.post(process.env.VUE_APP_AXIOS + 'title', params)
+      axios.post(`${process.env.VUE_APP_AXIOS}title`, params)
         .then(() => {
           this.$store.dispatch('updateTitle', this.titleNew);
-          document.title = this.titleNew + ' | Frenzy';
+          document.title = `${this.titleNew} | Frenzy`;
           this.showF = true;
-        })
+        });
       this.editF = false;
     },
-    handleDelete: function () {
+    handleDelete() {
       const params = new URLSearchParams();
       params.append('TokenString', window.$cookies.get('TokenString'));
       params.append('PID', this.$store.state.PID);
-      axios.post(process.env.VUE_APP_AXIOS + 'delete', params)
+      axios.post(`${process.env.VUE_APP_AXIOS}delete`, params)
         .then(() => {
-          location.reload();
-        })
+          window.location.reload();
+        });
     },
-    handleLogin: function () {
+    handleLogin() {
       this.$store.dispatch('updatePage', 'login');
     },
-    handleSignup: function () {
+    handleSignup() {
       this.$store.dispatch('updatePage', 'signup');
     },
-    handleLogout: function () {
+    handleLogout() {
       window.$cookies.set('TokenString', '');
       this.$store.dispatch('updateTokenString', '');
       this.$store.dispatch('updatePage', 'login');
@@ -102,8 +109,8 @@ export default {
       this.$store.dispatch('updatePID', -1);
       this.$store.dispatch('updateTitle', 'Plan Your Next Frenzy');
       document.title = 'Plan Your Next Frenzy | Frenzy';
-      let r = rebalanceItemA([], [], defaultItemA(), []);
-      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+      const r = rebalanceItemA([], [], defaultItemA(), []);
+      this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
     },
   },
   computed: {
@@ -125,12 +132,12 @@ export default {
   },
   directives: {
     select: {
-      inserted: function (el) {
-        el.select()
-      }
-    }
+      inserted(el) {
+        el.select();
+      },
+    },
   },
-}
+};
 </script>
 
 <style scoped>

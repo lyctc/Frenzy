@@ -22,8 +22,8 @@
 
 <script>
 import { mapActions } from 'vuex';
-import { rebalanceItemA, addItemHelper } from '../lib.js'
-import Item from './Item.vue'
+import { rebalanceItemA, addItemHelper } from '../lib';
+import Item from './Item.vue';
 
 export default {
   name: 'Layer',
@@ -33,20 +33,25 @@ export default {
   },
   directives: {
     select: {
-      inserted: function (el) {
-        el.select()
-      }
-    }
+      inserted(el) {
+        el.select();
+      },
+    },
   },
   methods: {
     ...mapActions([
       'updateItemA',
     ]),
-    addItem (e) {
-      let r;
-      let itemA0 = addItemHelper(e.target.value, this.$store.state.itemA, this.$store.state.viewLabelA, this.$props.parentPathItemA, 0);
-      r = rebalanceItemA([], [], itemA0, this.$store.state.viewLabelA);
-      this.$store.dispatch('updateItemA', {itemA: r.itemA, dispA: r.dispA})
+    addItem(e) {
+      const itemA0 = addItemHelper(
+        e.target.value,
+        this.$store.state.itemA,
+        this.$store.state.viewLabelA,
+        this.$props.parentPathItemA,
+        0,
+      );
+      const r = rebalanceItemA([], [], itemA0, this.$store.state.viewLabelA);
+      this.$store.dispatch('updateItemA', { itemA: r.itemA, dispA: r.dispA });
       // mode is automatically updated to 'normal' in the window listener
     },
   },
@@ -74,7 +79,7 @@ export default {
     },
     posA() {
       return this.$store.state.posA;
-    }
+    },
   },
 };
 </script>
